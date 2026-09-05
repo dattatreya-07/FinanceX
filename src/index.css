@@ -1,0 +1,193 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    /* Light Mode Tokens (Warm, Clean, Premium Educational + Financial) */
+    --color-bg: #F7F7F4;
+    --color-surface: #FFFFFF;
+    --color-surface-subtle: #F1F2F4;
+    --color-surface-elevated: #FFFFFF;
+    --color-surface-hover: #E9EBEF;
+    --color-border: #E4E6EA;
+    --color-border-subtle: #EDEDEE;
+    --color-text-primary: #111318;
+    --color-text-secondary: #626975;
+    --color-text-muted: #949BA6;
+    
+    /* Brand & Accent Colors */
+    --brand-pink: #FF2E7E;
+    --brand-pink-hover: #E61E6D;
+    --brand-mint: #00E599;
+    --brand-mint-dark: #059669;
+    --brand-gold: #F59E0B;
+    --brand-cyan: #06B6D4;
+    --brand-blue: #3B82F6;
+    --brand-purple: #8B5CF6;
+    --brand-rose: #F43F5E;
+
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-display: 'Space Grotesk', system-ui, sans-serif;
+  }
+
+  .dark {
+    /* Dark Mode Tokens (Cinematic, Technical, Power Financial) */
+    --color-bg: #07090E;
+    --color-surface: #0B0F19;
+    --color-surface-subtle: #121826;
+    --color-surface-elevated: #182032;
+    --color-surface-hover: #1E293B;
+    --color-border: #1E293B;
+    --color-border-subtle: #162032;
+    --color-text-primary: #F1F5F9;
+    --color-text-secondary: #94A3B8;
+    --color-text-muted: #64748B;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+    overflow-x: hidden;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+
+  code, pre, .font-mono {
+    font-family: var(--font-mono);
+  }
+
+  .font-display {
+    font-family: var(--font-display);
+  }
+}
+
+/* Custom 3D Coin Rotation */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+/* Candlestick Glow & Neon Accents */
+.glow-mint {
+  box-shadow: 0 0 25px -5px rgba(0, 229, 153, 0.35);
+}
+
+.glow-pink {
+  box-shadow: 0 0 25px -5px rgba(255, 46, 126, 0.35);
+}
+
+.glow-subtle {
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+}
+
+.dark .glow-subtle {
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F1F2F4;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #0B0E17;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #1E293B;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Grid Background */
+.bg-grid-pattern {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+}
+
+.dark .bg-grid-pattern {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+}
+
+.bg-radial-gradient {
+  background: radial-gradient(circle at 50% 0%, rgba(255, 46, 126, 0.06) 0%, rgba(0, 229, 153, 0.04) 35%, transparent 70%);
+}
+
+.dark .bg-radial-gradient {
+  background: radial-gradient(circle at 50% 0%, rgba(0, 229, 153, 0.12) 0%, rgba(255, 46, 126, 0.05) 35%, transparent 70%);
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+@keyframes spinSlow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spinSlow 8s linear infinite;
+}
+
+/* Smooth transitions for theme toggle elements */
+.theme-transition {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body, .theme-transition {
+    transition: none !important;
+  }
+  .animate-marquee, .animate-spin-slow {
+    animation: none !important;
+  }
+}

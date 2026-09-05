@@ -1,0 +1,6 @@
+{
+  "name": "FinanceX",
+  "description": "Gamified, AI-powered financial education and certification preparation platform with interactive market simulation and smart tutoring.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
