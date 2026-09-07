@@ -1,7 +1,7 @@
 [FinLearnAI_README.md](https://github.com/user-attachments/files/31868353/FinLearnAI_README.md)
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0F2E29,50:1B4B43,100:23695D&height=180&section=header&text=FinLearn%20AI&fontSize=42&fontColor=E8C468&fontAlignY=42&desc=Gamified%2C%20Multilingual%20Stock%20Market%20Education%20Platform&descAlignY=62&descColor=D8E8E3" width="100%"/>
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0F2E29,50:1B4B43,100:23695D&height=180&section=header&text=FinanceX%20AI&fontSize=42&fontColor=E8C468&fontAlignY=42&desc=Gamified%2C%20Multilingual%20Stock%20Market%20Education%20Platform&descAlignY=62&descColor=D8E8E3" width="100%"/>
 
 <img src="https://img.shields.io/badge/React-1B4B43?style=for-the-badge&logo=react&logoColor=E8C468" />
 <img src="https://img.shields.io/badge/Node.js-1B4B43?style=for-the-badge&logo=nodedotjs&logoColor=E8C468" />
@@ -12,7 +12,7 @@
 
 ## 📚 Overview
 
-**FinLearn AI** teaches stock market fundamentals through short animated lessons, adaptive quizzes, and an AI learning assistant — available in **Tamil and English** — to lower the barrier to financial literacy for first-time learners.
+**FinanceX AI** teaches stock market fundamentals through short animated lessons, adaptive quizzes, and an AI learning assistant — available in **Tamil and English** — to lower the barrier to financial literacy for first-time learners.
 
 Built as a Semester 5 mini project, and designed as the foundation for a planned final-year extension into a full AI-powered wealth advisor platform.
 
@@ -32,7 +32,7 @@ Built as a Semester 5 mini project, and designed as the foundation for a planned
 
 - **Frontend:** React, i18next (Tamil/English), Lottie, Framer Motion, Recharts
 - **Backend:** Node.js, Express.js
-- **Database:** MongoDB Atlas
+- **Database:** Postgre SQL
 - **AI Layer:** Google Gemini API
 - **Deployment:** Vercel (frontend), Render (backend)
 
