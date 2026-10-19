@@ -10,6 +10,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { Quiz, AppNavView } from '../../types/schema';
+import { learningLoopService } from '../../services/learningLoopService';
 
 interface QuizResultViewProps {
   quiz: Quiz;
@@ -17,7 +18,7 @@ interface QuizResultViewProps {
   totalQuestions: number;
   correctCount: number;
   onRetry: () => void;
-  onNavigate: (view: AppNavView) => void;
+  onNavigate: (view: AppNavView, payload?: any) => void;
 }
 
 export const QuizResultView: React.FC<QuizResultViewProps> = ({
@@ -29,6 +30,13 @@ export const QuizResultView: React.FC<QuizResultViewProps> = ({
   onNavigate
 }) => {
   const isPassed = score >= (quiz.passing_score_percent || 70);
+  const remediation = learningLoopService.buildQuizRemediation(
+    quiz.title,
+    quiz.title.replace('Quiz:', '').trim(),
+    score,
+    correctCount,
+    totalQuestions
+  );
 
   useEffect(() => {
     if (isPassed) {
@@ -95,15 +103,24 @@ export const QuizResultView: React.FC<QuizResultViewProps> = ({
         </div>
 
         {/* Diagnosis & Recommendations */}
-        <div className="text-left p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 space-y-2 text-xs">
-          <div className="font-mono font-bold text-slate-900 dark:text-slate-300 flex items-center gap-1.5 uppercase">
-            <BrainCircuit className="w-3.5 h-3.5 text-pink-600 dark:text-[#FF2E7E]" />
-            <span>AI Tutor Diagnostic Feedback</span>
+        <div className="text-left p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 space-y-3 text-xs">
+          <div className="font-mono font-bold text-slate-900 dark:text-slate-300 flex items-center justify-between">
+            <span className="flex items-center gap-1.5 uppercase">
+              <BrainCircuit className="w-3.5 h-3.5 text-pink-600 dark:text-[#FF2E7E]" />
+              <span>AI Diagnostic Feedback</span>
+            </span>
+            <button
+              onClick={() => onNavigate('ai-tutor', { prompt: remediation.ai_coaching_prompt })}
+              className="px-3 py-1 rounded-lg bg-pink-50 dark:bg-pink-950/40 text-[#FF2E7E] dark:text-[#00E599] font-bold text-[11px] hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <Sparkles className="w-3 h-3" />
+              <span>Ask AI: Explain My Mistakes</span>
+            </button>
           </div>
           <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
             {score >= 80
-              ? 'You demonstrated strong command of Delta and Gamma sensitivity. You are now prepared to tackle multi-leg option strategies in Lesson 3.'
-              : 'You missed questions regarding ATM Gamma peaking near expiration. Review the Option Greeks visualizer in Lesson 2 before attempting the full mock exam.'}
+              ? 'You demonstrated strong command of fundamental valuation and options pricing. You are now prepared to tackle advanced concepts.'
+              : `${remediation.mistake_summary} Click "Ask AI: Explain My Mistakes" for step-by-step coaching.`}
           </p>
         </div>
 

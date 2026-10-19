@@ -8,6 +8,7 @@ interface CinematicStoryStageProps {
   onOpenSignUp: () => void;
   onEnterApp: () => void;
   onScrollToDemo: () => void;
+  onProgressChange?: (progress: number, activeChapter: number) => void;
 }
 
 interface ChapterConfig {
@@ -52,6 +53,7 @@ export const CinematicStoryStage: React.FC<CinematicStoryStageProps> = ({
   onOpenSignUp,
   onEnterApp,
   onScrollToDemo,
+  onProgressChange,
 }) => {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
@@ -159,6 +161,17 @@ export const CinematicStoryStage: React.FC<CinematicStoryStageProps> = ({
 
       scrollProgressRef.current = rawProgress;
       setScrollProgress(rawProgress);
+
+      let currentCh = 1;
+      for (const ch of CHAPTERS) {
+        if (rawProgress >= ch.startP && rawProgress <= ch.endP) {
+          currentCh = ch.id;
+          break;
+        } else if (rawProgress > ch.endP) {
+          currentCh = Math.min(7, ch.id + 1);
+        }
+      }
+      onProgressChange?.(rawProgress, currentCh);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -264,7 +277,7 @@ export const CinematicStoryStage: React.FC<CinematicStoryStageProps> = ({
       ctx.scale(dpr, dpr);
 
       // Base background fill
-      ctx.fillStyle = isDark ? '#07090E' : '#FFFFFF';
+      ctx.fillStyle = isDark ? '#07090E' : '#F8F9FA';
       ctx.fillRect(0, 0, displayW, displayH);
 
       // Draw active canvas frames
@@ -306,20 +319,20 @@ export const CinematicStoryStage: React.FC<CinematicStoryStageProps> = ({
         }
       });
 
-      // Subtle top & bottom vignette gradient
+      // Edge-Only Vignette Gradient Overlay (middle is transparent to preserve image contrast)
       ctx.globalAlpha = 1.0;
       const gradient = ctx.createLinearGradient(0, 0, 0, displayH);
 
       if (isDark) {
-        gradient.addColorStop(0, 'rgba(7, 9, 14, 0.50)');
-        gradient.addColorStop(0.30, 'rgba(7, 9, 14, 0.10)');
-        gradient.addColorStop(0.70, 'rgba(7, 9, 14, 0.10)');
-        gradient.addColorStop(1, 'rgba(7, 9, 14, 0.60)');
+        gradient.addColorStop(0, 'rgba(7, 9, 14, 0.0)');
+        gradient.addColorStop(0.25, 'rgba(7, 9, 14, 0.0)');
+        gradient.addColorStop(0.85, 'rgba(7, 9, 14, 0.0)');
+        gradient.addColorStop(1, 'rgba(7, 9, 14, 0.85)');
       } else {
-        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.60)');
-        gradient.addColorStop(0.30, 'rgba(255, 255, 255, 0.15)');
-        gradient.addColorStop(0.70, 'rgba(255, 255, 255, 0.15)');
-        gradient.addColorStop(1, 'rgba(255, 255, 255, 0.65)');
+        gradient.addColorStop(0, 'rgba(248, 249, 250, 0.0)');
+        gradient.addColorStop(0.25, 'rgba(248, 249, 250, 0.0)');
+        gradient.addColorStop(0.85, 'rgba(248, 249, 250, 0.0)');
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0.85)');
       }
 
       ctx.fillStyle = gradient;
@@ -361,14 +374,14 @@ export const CinematicStoryStage: React.FC<CinematicStoryStageProps> = ({
     return states;
   }, [scrollProgress, prefersReducedMotion]);
 
-  // Shared ultra-glossy transparent glassmorphic card style
-  const glossyCardStyle = "w-full p-6 sm:p-10 rounded-3xl bg-white/20 dark:bg-slate-950/25 border border-white/50 dark:border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.22)] backdrop-blur-xl flex flex-col items-center justify-center text-center space-y-5 transition-transform duration-75";
-  const glossyPillStyle = "px-3 py-1 rounded-lg bg-white/40 dark:bg-slate-900/40 border border-white/50 dark:border-white/10 shadow-xs backdrop-blur-md";
+  // Shared ultra-glossy transparent glassmorphic card style (partially transparent in both light and dark mode)
+  const glossyCardStyle = "w-full p-6 sm:p-10 rounded-3xl bg-white/45 dark:bg-slate-950/60 border border-white/50 dark:border-white/15 shadow-[0_16px_48px_0_rgba(0,0,0,0.08)] dark:shadow-[0_16px_48px_0_rgba(0,0,0,0.5)] backdrop-blur-xl flex flex-col items-center justify-center text-center space-y-5 transition-all duration-200";
+  const glossyPillStyle = "px-3 py-1 rounded-lg bg-white/40 dark:bg-slate-900/60 border border-white/40 dark:border-white/10 text-slate-800 dark:text-slate-200 shadow-xs backdrop-blur-md";
 
   return (
     <div ref={containerRef} className="relative h-[680vh] w-full">
-      {/* SINGLE MASTER STICKY VIEWPORT CONTAINER */}
-      <div className="sticky top-0 h-screen w-full overflow-hidden theme-transition flex flex-col justify-between pt-24 pb-8">
+      {/* SINGLE MASTER STICKY VIEWPORT CONTAINER - Full bleed, no top partition */}
+      <div className="sticky top-0 h-screen w-full overflow-hidden theme-transition flex flex-col justify-center items-center pt-0 pb-6">
         {/* Layer 0: Master Canvas */}
         <canvas
           ref={canvasRef}

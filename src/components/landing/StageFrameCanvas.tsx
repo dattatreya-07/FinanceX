@@ -174,20 +174,20 @@ export const StageFrameCanvas: React.FC<StageFrameCanvasProps> = ({
       ctx.globalAlpha = Math.max(0, Math.min(1, opacity));
       ctx.drawImage(imgToDraw, offsetX, offsetY, renderW, renderH);
 
-      // Theme-Aware Gradient Overlay for high text contrast
+      // Edge-Only Theme-Aware Gradient Overlay for high text contrast
       ctx.globalAlpha = Math.max(0, Math.min(1, opacity));
       const gradient = ctx.createLinearGradient(0, 0, 0, displayHeight);
 
       if (isDark) {
-        gradient.addColorStop(0, 'rgba(7, 9, 14, 0.70)');
-        gradient.addColorStop(0.25, 'rgba(7, 9, 14, 0.20)');
-        gradient.addColorStop(0.75, 'rgba(7, 9, 14, 0.20)');
-        gradient.addColorStop(1, 'rgba(7, 9, 14, 0.80)');
+        gradient.addColorStop(0, 'rgba(7, 9, 14, 0.85)');
+        gradient.addColorStop(0.18, 'rgba(7, 9, 14, 0.0)');
+        gradient.addColorStop(0.82, 'rgba(7, 9, 14, 0.0)');
+        gradient.addColorStop(1, 'rgba(7, 9, 14, 0.85)');
       } else {
-        gradient.addColorStop(0, 'rgba(247, 247, 244, 0.85)');
-        gradient.addColorStop(0.25, 'rgba(247, 247, 244, 0.30)');
-        gradient.addColorStop(0.75, 'rgba(247, 247, 244, 0.30)');
-        gradient.addColorStop(1, 'rgba(247, 247, 244, 0.90)');
+        gradient.addColorStop(0, 'rgba(248, 249, 250, 0.95)');
+        gradient.addColorStop(0.18, 'rgba(248, 249, 250, 0.0)');
+        gradient.addColorStop(0.82, 'rgba(248, 249, 250, 0.0)');
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0.95)');
       }
 
       ctx.fillStyle = gradient;

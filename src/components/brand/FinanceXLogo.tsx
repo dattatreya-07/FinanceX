@@ -8,11 +8,12 @@ export interface FinanceXLogoProps {
   glow?: boolean;
   className?: string;
   onClick?: () => void;
+  inverse?: boolean;
 }
 
 /**
  * Official FinanceX Brand Mark:
- * Uses the supplied favicon.png asset as the primary source of truth.
+ * Renders a crisp, glowing institutional crest with emerald & gold tones.
  */
 export const FinanceXMark: React.FC<{
   size?: number;
@@ -26,14 +27,15 @@ export const FinanceXMark: React.FC<{
       style={{ width: size, height: size }}
     >
       {glow && (
-        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#00E599]/30 to-[#FF2E7E]/30 blur-sm transform scale-110 pointer-events-none" />
+        <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-emerald-400/40 via-teal-400/30 to-amber-400/40 blur-sm transform scale-110 pointer-events-none" />
       )}
-      <img
-        src="/favicon.png"
-        alt="FinanceX Mark"
-        style={{ width: size, height: size }}
-        className="relative z-10 object-contain drop-shadow-md"
-      />
+      <div 
+        className="relative z-10 w-full h-full rounded-xl bg-gradient-to-br from-[#064E3B] via-[#047857] to-[#032B25] border border-amber-300/40 p-1 flex items-center justify-center shadow-md shadow-emerald-950/50"
+      >
+        <span className="font-display font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-200 via-white to-amber-300 select-none text-[65%] leading-none">
+          FX
+        </span>
+      </div>
     </div>
   );
 };
@@ -61,16 +63,17 @@ export const BrandMark: React.FC<{
 export const Wordmark: React.FC<{
   fontSize?: string;
   className?: string;
-}> = ({ fontSize = 'text-xl sm:text-2xl', className = '' }) => {
+  inverse?: boolean;
+}> = ({ fontSize = 'text-xl sm:text-2xl', className = '', inverse = false }) => {
   return (
     <div className={`inline-flex items-baseline tracking-tight font-display select-none ${className}`}>
-      <span className={`font-black text-slate-900 dark:text-white tracking-tight ${fontSize}`}>
+      <span className={`font-black tracking-tight ${inverse ? 'text-white' : 'text-slate-900 dark:text-white'} ${fontSize}`}>
         Finan
       </span>
-      <span className={`font-black text-emerald-600 dark:text-[#00E599] ${fontSize}`}>
+      <span className={`font-black text-emerald-400 dark:text-[#00E599] ${fontSize}`}>
         ce
       </span>
-      <span className={`font-black text-[#FF2E7E] ml-0.5 ${fontSize}`}>
+      <span className={`font-black text-amber-400 dark:text-amber-300 ml-0.5 ${fontSize}`}>
         X
       </span>
     </div>
@@ -83,7 +86,8 @@ export const FinanceXLogo: React.FC<FinanceXLogoProps> = ({
   animated = false,
   glow = true,
   className = '',
-  onClick
+  onClick,
+  inverse = false
 }) => {
   const sizeConfig = {
     sm: { markSize: 28, fontSize: 'text-lg', subtitle: false },
@@ -141,7 +145,7 @@ export const FinanceXLogo: React.FC<FinanceXLogoProps> = ({
 
       {variant !== 'compact' && (
         <div className="flex flex-col">
-          <Wordmark fontSize={current.fontSize} />
+          <Wordmark fontSize={current.fontSize} inverse={inverse} />
           {current.subtitle && (
             <span className="text-[9px] sm:text-[10px] tracking-widest uppercase font-mono font-bold text-slate-500 dark:text-slate-400 -mt-0.5">
               AI FINANCIAL ACADEMY & MARKETS

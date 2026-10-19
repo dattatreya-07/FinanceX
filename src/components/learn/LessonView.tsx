@@ -10,7 +10,11 @@ import {
   Sparkles, 
   Bookmark, 
   Play, 
-  Check 
+  Check,
+  FileText,
+  Download,
+  ExternalLink,
+  Award
 } from 'lucide-react';
 import { 
   Lesson, 
@@ -19,6 +23,7 @@ import {
   LessonResource, 
   AppNavView 
 } from '../../types/schema';
+import { NISM_XV_CHAPTERS } from '../../data/nismFullCurriculum';
 
 interface LessonViewProps {
   lesson: Lesson;
@@ -29,7 +34,35 @@ interface LessonViewProps {
   onSelectLesson: (lesson: Lesson) => void;
   onNavigate: (view: AppNavView, payload?: any) => void;
   onOpenAIWithContext: (topicName: string) => void;
+  onToggleComplete?: (lessonId: number, isCompleted: boolean) => void;
 }
+
+const NISM_XV_VIDEOS: Record<number, { youtubeId: string; title: string; duration: string }> = {
+  1: { youtubeId: 'wQpG48u4_Q0', title: 'Chapter 1: Intro to Research Analyst Profession & Ethics', duration: '28m' },
+  2: { youtubeId: 'p7HKvqRI_Bo', title: 'Chapter 2: Securities Markets Architecture & Structure', duration: '35m' },
+  3: { youtubeId: 'b_VpIq3ZlXk', title: 'Chapter 3: Terminology in Equity & Debt Markets', duration: '42m' },
+  4: { youtubeId: 'mYF2_FBCvXw', title: 'Chapter 4: Fundamentals of Research & E-I-C Framework', duration: '32m' },
+  5: { youtubeId: 'x_36E8N6s-0', title: 'Chapter 5: Economic Analysis & RBI Monetary Policy', duration: '46m' },
+  6: { youtubeId: 'q6rE6q34rXw', title: 'Chapter 6: Industry Analysis & Porter 5 Forces', duration: '38m' },
+  7: { youtubeId: 'K5bC4Z9HrqY', title: 'Chapter 7: Company Analysis – Qualitative Dimensions', duration: '48m' },
+  8: { youtubeId: 'X3s3u2zN2v8', title: 'Chapter 8: Financial Analysis & DuPont 3-Step ROE', duration: '54m' },
+  9: { youtubeId: 'V36rL9K63B4', title: 'Chapter 9: Corporate Actions, Splits, Bonus & Ex-Dates', duration: '34m' },
+  10: { youtubeId: 'fd_epV96106', title: 'Chapter 10: Valuation Principles (DCF, FCFF & Multiples)', duration: '58m' },
+  11: { youtubeId: '5wQ30N7xYd0', title: 'Chapter 11: Risk and Return, CAPM, Beta & Sharpe Ratio', duration: '44m' },
+  12: { youtubeId: 'dQe7t8bI4F0', title: 'Chapter 12: Qualities of a Good Research Report', duration: '30m' },
+  13: { youtubeId: 'vE98mO43xK1', title: 'Chapter 13: Legal & Regulatory Framework (SEBI RA 2014)', duration: '52m' },
+  14: { youtubeId: '3WpD_6FpM-c', title: 'Chapter 14: Mutual Funds, Passive Funds & Alternatives', duration: '36m' },
+  15: { youtubeId: 'qQLM_sCg73k', title: 'Chapter 15: Derivatives Markets & Institutional Hedging', duration: '40m' }
+};
+
+const DEFAULT_VIDEOS: Record<number, { youtubeId: string; title: string; duration: string }> = {
+  1: { youtubeId: 'sVjX9F_gO80', title: 'Futures Contracts Basics & Cost of Carry Model', duration: '25m' },
+  2: { youtubeId: 'xUjMh31yB8I', title: 'Option Greeks: Delta, Gamma, Theta & Vega', duration: '35m' },
+  3: { youtubeId: '1Z3oY6o1VbQ', title: 'Multi-Leg Strategies: Bull Spreads & Iron Condors', duration: '30m' },
+  4: { youtubeId: '4_ZlC_k9v7w', title: 'Derivatives Clearing, Margining & SEBI Framework', duration: '25m' },
+  5: { youtubeId: 'b_VpIq3ZlXk', title: 'Bond Pricing Mechanics & Yield to Maturity', duration: '30m' },
+  6: { youtubeId: '5wQ30N7xYd0', title: 'Macaulay Duration & Convexity Hedging', duration: '32m' }
+};
 
 export const LessonView: React.FC<LessonViewProps> = ({
   lesson,
@@ -39,19 +72,31 @@ export const LessonView: React.FC<LessonViewProps> = ({
   resources,
   onSelectLesson,
   onNavigate,
-  onOpenAIWithContext
+  onOpenAIWithContext,
+  onToggleComplete
 }) => {
-  const [activeMode, setActiveMode] = useState<'TEXT' | 'VIDEO'>(
-    content.content_type === 'VIDEO' ? 'VIDEO' : 'TEXT'
-  );
+  const [activeMode, setActiveMode] = useState<'TEXT' | 'VIDEO'>('TEXT');
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const [userNote, setUserNote] = useState('Theta decay is non-linear; max decay occurs in the last 10 days before Nifty Thursday expiry.');
+  const [userNote, setUserNote] = useState('Key concept note: Always cross-verify Operating Cash Flow with Net Profit when evaluating earnings quality.');
   const [activeTab, setActiveTab] = useState<'SYLLABUS' | 'RESOURCES' | 'NOTES'>('SYLLABUS');
   const [isCompleted, setIsCompleted] = useState(lesson.is_completed || false);
+
+  React.useEffect(() => {
+    setIsCompleted(lesson.is_completed || false);
+  }, [lesson.lesson_id, lesson.is_completed]);
 
   const currentIndex = allLessons.findIndex((l) => l.lesson_id === lesson.lesson_id);
   const prevLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null;
   const nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null;
+
+  const isNismXv = course.course_id === 3 || lesson.lesson_id > 100;
+  const chapterNumber = isNismXv 
+    ? (lesson.lesson_id > 100 ? lesson.lesson_id - 100 : lesson.lesson_id)
+    : lesson.lesson_id;
+
+  const currentVideo = isNismXv 
+    ? (NISM_XV_VIDEOS[chapterNumber] || NISM_XV_VIDEOS[1])
+    : (DEFAULT_VIDEOS[lesson.lesson_id] || DEFAULT_VIDEOS[1]);
 
   return (
     <div className="space-y-6" id="lesson-view">
@@ -66,7 +111,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
           </button>
           <div>
             <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
-              {course.course_title} • Lesson {currentIndex + 1} of {allLessons.length}
+              {course.course_title} • Lesson {currentIndex >= 0 ? currentIndex + 1 : chapterNumber} of {Math.max(15, allLessons.length)}
             </div>
             <h1 className="text-xl sm:text-2xl font-display font-black text-slate-900 dark:text-white">
               {lesson.title}
@@ -82,7 +127,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
               onClick={() => setActiveMode('TEXT')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition cursor-pointer ${
                 activeMode === 'TEXT'
-                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold shadow-xs'
+                  ? 'bg-white dark:bg-slate-800 text-emerald-800 dark:text-[#00E599] font-bold shadow-xs'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
@@ -93,11 +138,11 @@ export const LessonView: React.FC<LessonViewProps> = ({
               onClick={() => setActiveMode('VIDEO')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition cursor-pointer ${
                 activeMode === 'VIDEO'
-                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold shadow-xs'
+                  ? 'bg-white dark:bg-slate-800 text-amber-700 dark:text-amber-400 font-bold shadow-xs'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
-              <Video className="w-3.5 h-3.5 text-[#FF2E7E]" />
+              <Video className="w-3.5 h-3.5 text-amber-500" />
               <span>Video Lecture</span>
             </button>
           </div>
@@ -116,24 +161,76 @@ export const LessonView: React.FC<LessonViewProps> = ({
         </div>
       </div>
 
+      {/* Official NISM Series XV Workbook Attachment Banner */}
+      {isNismXv && (
+        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-[#032B25] via-[#064E3B] to-[#047857] text-white border border-amber-300/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg shadow-emerald-950/20">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-amber-400/20 border border-amber-300/40 flex items-center justify-center text-amber-300 shrink-0 shadow-sm">
+              <FileText className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-300/30">
+                  OFFICIAL EXAM WORKBOOK
+                </span>
+                <span className="text-xs text-emerald-200 font-mono">February 2026 Edition • 342 Pages</span>
+              </div>
+              <h3 className="text-sm font-bold text-white mt-1">
+                NISM-Series-XV: Research Analyst Examination Workbook
+              </h3>
+              <p className="text-[11px] text-emerald-100/80 mt-0.5">
+                Complete official syllabus text with formulas, regulatory case studies, and chapter review questions.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
+            <a
+              href="/assets/nism-series-xv-workbook-feb-2026.pdf"
+              target="_blank"
+              rel="noreferrer"
+              className="px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer backdrop-blur-sm"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>Preview PDF</span>
+            </a>
+            <a
+              href="/assets/nism-series-xv-workbook-feb-2026.pdf"
+              download="17 NISM-Series-XV-Research Analyst Examination Workbook February 2026.pdf"
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 text-xs font-black transition flex items-center gap-1.5 shadow-md shadow-amber-500/25 cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Download Workbook</span>
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* Main Grid: Content Area & Right Sidebar */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left 8 Cols: Active Learning Material */}
         <div className="lg:col-span-8 space-y-6">
           {activeMode === 'VIDEO' ? (
-            /* Video Mode Player */
-            <div className="rounded-3xl bg-black border border-slate-800 overflow-hidden shadow-2xl">
-              <div className="relative aspect-video w-full bg-slate-950 flex flex-col items-center justify-center group">
-                <div className="w-20 h-20 rounded-full bg-[#00E599]/20 border border-[#00E599]/60 flex items-center justify-center text-[#00E599] shadow-[0_0_30px_rgba(0,229,153,0.3)] group-hover:scale-110 transition duration-300 cursor-pointer">
-                  <Play className="w-8 h-8 fill-[#00E599] translate-x-1" />
-                </div>
-                <span className="text-xs font-mono text-slate-400 mt-4">
-                  Interactive Video Lecture • 1080p 60fps
-                </span>
+            /* Real YouTube Video Player */
+            <div className="rounded-3xl bg-black border border-emerald-900/40 overflow-hidden shadow-2xl">
+              <div className="relative aspect-video w-full bg-slate-950">
+                <iframe
+                  src={`https://www.youtube-nocookie.com/embed/${currentVideo.youtubeId}?autoplay=0&rel=0`}
+                  title={currentVideo.title}
+                  className="w-full h-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
               </div>
-              <div className="p-4 bg-slate-900/90 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-                <span>Timestamp: 04:12 / 22:45</span>
-                <span className="font-mono text-[#00E599]">Auto-Synced Notes Active</span>
+              <div className="p-4 bg-[#032B25] border-t border-emerald-800/40 flex items-center justify-between text-xs text-emerald-200">
+                <div className="truncate max-w-md font-bold">
+                  {currentVideo.title}
+                </div>
+                <div className="flex items-center gap-2 font-mono text-amber-300 shrink-0 font-bold">
+                  <span>HD 1080p</span>
+                  <span>•</span>
+                  <span>{currentVideo.duration}</span>
+                </div>
               </div>
             </div>
           ) : null}
@@ -158,41 +255,85 @@ export const LessonView: React.FC<LessonViewProps> = ({
               </div>
             )}
 
-            {/* Markdown Body Rendering */}
+            {/* Dynamic Markdown Body Rendering */}
             <div className="prose prose-slate dark:prose-invert max-w-none text-slate-700 dark:text-slate-300 text-sm space-y-4">
-              <div className="space-y-3">
-                <h2 className="text-xl font-display font-black text-slate-900 dark:text-white">
-                  1. Deep Dive: Delta & Option Price Curvature
-                </h2>
-                <p>
-                  In derivatives trading, <strong>Delta (Δ)</strong> is the first derivative of the option price with respect to the underlying asset price:
-                </p>
-                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 font-mono text-xs text-emerald-800 dark:text-[#00E599] border border-slate-200 dark:border-slate-800 font-bold">
-                  Delta = ∂V / ∂S
-                </div>
-                <p>
-                  Delta represents the hedge ratio. For a portfolio of 1,000 long Call options with Delta 0.50, the trader holds equivalent directional exposure of <strong>500 shares</strong> of underlying spot stock.
-                </p>
-              </div>
+              {content.raw_body ? (
+                content.raw_body.split('\n\n').map((block, idx) => {
+                  const trimmed = block.trim();
+                  if (!trimmed) return null;
 
-              <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800/60">
-                <h2 className="text-xl font-display font-black text-slate-900 dark:text-white">
-                  2. Gamma Acceleration & Tail Risk
-                </h2>
-                <p>
-                  While Delta measures velocity, <strong>Gamma (Γ)</strong> measures acceleration:
-                </p>
-                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 font-mono text-xs text-pink-700 dark:text-[#FF2E7E] border border-slate-200 dark:border-slate-800 font-bold">
-                  Gamma = ∂²V / ∂S² = ∂Δ / ∂S
+                  if (trimmed.startsWith('### ')) {
+                    return (
+                      <h3 key={idx} className="text-lg font-display font-black text-slate-900 dark:text-white pt-2">
+                        {trimmed.replace(/^###\s+/, '')}
+                      </h3>
+                    );
+                  }
+                  if (trimmed.startsWith('## ')) {
+                    return (
+                      <h2 key={idx} className="text-xl font-display font-black text-slate-900 dark:text-white pt-3 border-t border-slate-100 dark:border-slate-800/60 first:border-0 first:pt-0">
+                        {trimmed.replace(/^##\s+/, '')}
+                      </h2>
+                    );
+                  }
+                  if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+                    const items = trimmed.split('\n').filter(Boolean);
+                    return (
+                      <ul key={idx} className="space-y-1.5 list-disc list-inside text-slate-700 dark:text-slate-300 pl-2">
+                        {items.map((item, itemIdx) => {
+                          const cleanItem = item.replace(/^[-*]\s+/, '');
+                          // Format bold text
+                          const parts = cleanItem.split(/(\*\*.*?\*\*)/g);
+                          return (
+                            <li key={itemIdx}>
+                              {parts.map((part, pIdx) => {
+                                if (part.startsWith('**') && part.endsWith('**')) {
+                                  return <strong key={pIdx} className="text-slate-900 dark:text-white">{part.slice(2, -2)}</strong>;
+                                }
+                                return part;
+                              })}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    );
+                  }
+                  if (trimmed.startsWith('```') || trimmed.includes(' = ') && trimmed.length < 120 && !trimmed.includes('\n')) {
+                    return (
+                      <div key={idx} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 font-mono text-xs text-emerald-800 dark:text-[#00E599] border border-slate-200 dark:border-slate-800 font-bold overflow-x-auto">
+                        {trimmed.replace(/```[a-z]*/g, '').trim()}
+                      </div>
+                    );
+                  }
+
+                  // Standard paragraph with bold formatting
+                  const parts = trimmed.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+                  return (
+                    <p key={idx} className="leading-relaxed">
+                      {parts.map((part, pIdx) => {
+                        if (part.startsWith('**') && part.endsWith('**')) {
+                          return <strong key={pIdx} className="text-slate-900 dark:text-white">{part.slice(2, -2)}</strong>;
+                        }
+                        if (part.startsWith('*') && part.endsWith('*')) {
+                          return <em key={pIdx} className="text-slate-800 dark:text-slate-200">{part.slice(1, -1)}</em>;
+                        }
+                        return part;
+                      })}
+                    </p>
+                  );
+                })
+              ) : (
+                <div className="space-y-3">
+                  <h2 className="text-xl font-display font-black text-slate-900 dark:text-white">
+                    {lesson.title}
+                  </h2>
+                  <p>Comprehensive interactive lesson module. Review the syllabus, key takeaways, and mathematical models below.</p>
                 </div>
-                <p>
-                  As expiry approaches, ATM Gamma explodes upwards. This requires option sellers to rapidly buy spot when the market rallies and sell when it crashes—a phenomenon known as <em>adverse Gamma drag</em>.
-                </p>
-              </div>
+              )}
             </div>
 
             {/* Interactive Formulas Explorer */}
-            {content.formulas && (
+            {content.formulas && content.formulas.length > 0 && (
               <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <div className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   Mathematical Formulas & Pricing Models
@@ -222,7 +363,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
               </div>
               <button
                 onClick={() => onOpenAIWithContext(lesson.title)}
-                className="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-bold text-pink-600 dark:text-[#00E599] transition cursor-pointer shadow-xs"
+                className="px-3.5 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800/60 text-xs font-bold text-emerald-700 dark:text-emerald-300 transition cursor-pointer shadow-xs"
               >
                 Explain with AI
               </button>
@@ -234,7 +375,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
             {prevLesson ? (
               <button
                 onClick={() => onSelectLesson(prevLesson)}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition shadow-xs cursor-pointer"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition shadow-xs cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span>Prev: {prevLesson.title.split(':')[0]}</span>
@@ -244,11 +385,17 @@ export const LessonView: React.FC<LessonViewProps> = ({
             )}
 
             <button
-              onClick={() => setIsCompleted(true)}
+              onClick={() => {
+                const nextState = !isCompleted;
+                setIsCompleted(nextState);
+                if (onToggleComplete) {
+                  onToggleComplete(lesson.lesson_id, nextState);
+                }
+              }}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer shadow-xs ${
                 isCompleted
                   ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/20 dark:text-[#00E599] dark:border-emerald-500/40'
-                  : 'bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white'
+                  : 'bg-gradient-to-r from-[#047857] via-[#059669] to-[#0D9488] hover:from-emerald-700 text-white shadow-emerald-600/20'
               }`}
             >
               <Check className="w-4 h-4" />
@@ -258,7 +405,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
             {nextLesson && (
               <button
                 onClick={() => onSelectLesson(nextLesson)}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FF2E7E] hover:bg-[#E61E6D] text-white dark:bg-gradient-to-r dark:from-[#00E599] dark:to-[#00B377] dark:text-slate-950 font-bold text-xs shadow-md transition cursor-pointer"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#047857] via-[#059669] to-[#10B981] hover:from-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/25 transition cursor-pointer"
               >
                 <span>Next Lesson</span>
                 <ArrowRight className="w-4 h-4" />
@@ -270,26 +417,27 @@ export const LessonView: React.FC<LessonViewProps> = ({
         {/* Right 4 Cols: Syllabus, Resources & Study Notes */}
         <div className="lg:col-span-4 space-y-6">
           {/* Quick Checkpoint Quiz CTA */}
-          <div className="p-5 rounded-3xl bg-gradient-to-br from-pink-50 via-rose-50 to-teal-50 dark:from-slate-900 dark:via-[#0C1422] dark:to-[#0E1F30] border border-pink-200 dark:border-[#00E599]/40 space-y-3 shadow-xs theme-transition">
+          <div className="p-5 rounded-3xl bg-gradient-to-br from-emerald-50 via-teal-50 to-amber-50 dark:from-[#032B25] dark:via-[#064E3B] dark:to-[#047857] border border-amber-300/30 space-y-3 shadow-md theme-transition">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono font-bold text-[#FF2E7E] dark:text-[#00E599] uppercase tracking-wider">
-                CHECKPOINT EVALUATION
+              <span className="text-[10px] font-mono font-bold text-amber-600 dark:text-amber-300 uppercase tracking-wider flex items-center gap-1">
+                <Award className="w-3.5 h-3.5 text-amber-500" />
+                CHAPTER MASTERY QUIZ
               </span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/70 dark:bg-black/30 text-slate-800 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-700/60 font-bold">
                 5 Questions
               </span>
             </div>
             <h4 className="font-display font-black text-sm text-slate-900 dark:text-white">
-              Test Your Option Greeks Mastery
+              {isNismXv ? `Test Chapter ${chapterNumber} Mastery` : 'Test Concept Mastery'}
             </h4>
-            <p className="text-xs text-slate-600 dark:text-slate-300">
-              Verify your numerical calculation skills before proceeding to multi-leg option strategies.
+            <p className="text-xs text-slate-600 dark:text-emerald-100/90 leading-relaxed">
+              Verify your numerical calculation and conceptual skills with official NISM exam questions.
             </p>
             <button
-              onClick={() => onNavigate('quizzes')}
-              className="w-full py-2.5 rounded-xl bg-[#FF2E7E] hover:bg-[#E61E6D] text-white dark:bg-[#00E599] dark:hover:bg-[#00B377] dark:text-slate-950 font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+              onClick={() => onNavigate('quizzes', { quizId: isNismXv ? 100 + chapterNumber : 1 })}
+              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black text-xs transition flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/20 cursor-pointer"
             >
-              <span>Launch Quiz Runner</span>
+              <span>Launch Chapter Quiz</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -299,8 +447,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
             {/* Tab Headers */}
             <div className="grid grid-cols-3 border-b border-slate-200 dark:border-slate-800 text-xs font-mono">
               {[
-                { id: 'SYLLABUS' as const, label: 'Syllabus' },
-                { id: 'RESOURCES' as const, label: 'Files' },
+                { id: 'SYLLABUS' as const, label: 'Syllabus (15 Ch)' },
+                { id: 'RESOURCES' as const, label: 'Resources' },
                 { id: 'NOTES' as const, label: 'My Notes' }
               ].map((tab) => (
                 <button
@@ -308,7 +456,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
                   onClick={() => setActiveTab(tab.id)}
                   className={`py-3 text-center transition cursor-pointer ${
                     activeTab === tab.id
-                      ? 'bg-slate-50 dark:bg-slate-800/80 text-[#FF2E7E] dark:text-[#00E599] font-bold border-b-2 border-[#FF2E7E] dark:border-[#00E599]'
+                      ? 'bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 font-bold border-b-2 border-emerald-600 dark:border-emerald-400'
                       : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                   }`}
                 >
@@ -320,32 +468,56 @@ export const LessonView: React.FC<LessonViewProps> = ({
             {/* Tab Content */}
             <div className="p-4">
               {activeTab === 'SYLLABUS' && (
-                <div className="space-y-2">
-                  {allLessons.map((l, idx) => {
+                <div className="space-y-2 max-h-[520px] overflow-y-auto pr-1">
+                  {(allLessons.length > 0 ? allLessons : (
+                    NISM_XV_CHAPTERS.map(ch => ({
+                      lesson_id: 100 + ch.chapterNumber,
+                      course_id: 3,
+                      topic_id: ch.chapterNumber,
+                      title: `Chapter ${ch.chapterNumber}: ${ch.chapterTitle}`,
+                      resource_links: ['/assets/nism-series-xv-workbook-feb-2026.pdf'],
+                      estimated_mins: ch.estimatedMinutes,
+                      is_completed: false,
+                      order_index: ch.chapterNumber
+                    }))
+                  )).map((l, idx) => {
                     const isCurrent = l.lesson_id === lesson.lesson_id;
+                    const chNum = l.lesson_id > 100 ? l.lesson_id - 100 : idx + 1;
+                    const chData = NISM_XV_CHAPTERS.find(c => c.chapterNumber === chNum);
+                    const weightage = chData ? chData.weightageMarks : 5;
+
                     return (
                       <div
                         key={l.lesson_id}
                         onClick={() => onSelectLesson(l)}
                         className={`p-3 rounded-2xl border text-xs cursor-pointer transition flex items-start gap-2.5 ${
                           isCurrent
-                            ? 'bg-pink-50 border-[#FF2E7E] text-slate-900 font-bold dark:bg-slate-800 dark:border-[#00E599] dark:text-white'
+                            ? 'bg-emerald-50/80 border-emerald-500 text-slate-900 font-bold dark:bg-emerald-950/40 dark:border-emerald-400 dark:text-white shadow-xs'
                             : 'bg-slate-50/50 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800/80 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900'
                         }`}
                       >
-                        <div className="mt-0.5">
+                        <div className="mt-0.5 shrink-0">
                           {l.is_completed ? (
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-[#00E599]" />
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-[#00E599]" />
                           ) : (
-                            <div className="w-3.5 h-3.5 rounded-full border border-slate-400 dark:border-slate-600 flex items-center justify-center text-[9px] font-mono text-slate-500">
-                              {idx + 1}
+                            <div className={`w-4 h-4 rounded-full border flex items-center justify-center text-[9px] font-mono font-bold ${
+                              isCurrent ? 'border-emerald-600 text-emerald-700 dark:text-emerald-300' : 'border-slate-400 text-slate-500'
+                            }`}>
+                              {chNum}
                             </div>
                           )}
                         </div>
-                        <div className="flex-1">
-                          <div className="line-clamp-2">{l.title}</div>
-                          <div className="text-[10px] text-slate-500 font-mono mt-0.5">
-                            {l.estimated_mins} mins
+                        <div className="flex-1 min-w-0">
+                          <div className="line-clamp-2 leading-snug">{l.title}</div>
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            <span className="text-[10px] text-slate-500 font-mono">
+                              {l.estimated_mins || 30} mins
+                            </span>
+                            {isNismXv && (
+                              <span className="px-1.5 py-0.2 rounded-md bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 font-mono text-[9px] font-black border border-amber-300/40">
+                                {weightage} Marks
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -355,25 +527,52 @@ export const LessonView: React.FC<LessonViewProps> = ({
               )}
 
               {activeTab === 'RESOURCES' && (
-                <div className="space-y-2">
+                <div className="space-y-3">
+                  {/* Official PDF Workbook Primary Card */}
+                  <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-slate-900 border border-emerald-300/60 dark:border-emerald-800/60 flex items-center justify-between text-xs shadow-xs">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="p-2 rounded-xl bg-emerald-600 text-white shrink-0 shadow-xs">
+                        <FileText className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-bold text-slate-900 dark:text-emerald-200 truncate">
+                          Official NISM-Series-XV Workbook
+                        </div>
+                        <div className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400">
+                          February 2026 • 342 Pages • 6.1 MB PDF
+                        </div>
+                      </div>
+                    </div>
+                    <a
+                      href="/assets/nism-series-xv-workbook-feb-2026.pdf"
+                      download="17 NISM-Series-XV-Research Analyst Examination Workbook February 2026.pdf"
+                      className="p-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-300/60 transition shadow-xs cursor-pointer shrink-0"
+                      title="Download Official Workbook PDF"
+                    >
+                      <Download className="w-4 h-4" />
+                    </a>
+                  </div>
+
                   {resources.map((res) => (
                     <div
                       key={res.resource_id}
                       className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition flex items-center justify-between text-xs"
                     >
-                      <div className="flex items-center gap-2">
-                        <FileDown className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-                        <div>
-                          <div className="font-bold text-slate-900 dark:text-slate-200">{res.resource_title}</div>
+                      <div className="flex items-center gap-2 truncate">
+                        <FileDown className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <div className="truncate">
+                          <div className="font-bold text-slate-900 dark:text-slate-200 truncate">{res.resource_title}</div>
                           <div className="text-[10px] font-mono text-slate-500">{res.resource_type}</div>
                         </div>
                       </div>
-                      <button
-                        onClick={() => alert(`Downloading verified study resource: ${res.resource_title}`)}
-                        className="p-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition"
+                      <a
+                        href={res.resource_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition shrink-0 cursor-pointer"
                       >
-                        <FileDown className="w-3.5 h-3.5" />
-                      </button>
+                        <Download className="w-3.5 h-3.5" />
+                      </a>
                     </div>
                   ))}
                 </div>

@@ -126,7 +126,12 @@ export const MockExamsCatalogView: React.FC<MockExamsCatalogViewProps> = ({
                   Passing threshold: <strong className="text-slate-900 dark:text-white">{exam.passing_percentage || 60}%</strong>
                 </span>
                 <button
-                  onClick={() => onStartExam(exam)}
+                  onClick={() => {
+                    if (document.documentElement.requestFullscreen) {
+                      document.documentElement.requestFullscreen().catch(() => {});
+                    }
+                    onStartExam(exam);
+                  }}
                   className="px-5 py-2.5 rounded-xl bg-[#FF2E7E] hover:bg-[#E61E6D] text-white dark:bg-gradient-to-r dark:from-[#00E599] dark:to-[#00B377] dark:text-slate-950 font-bold text-xs shadow-xs transition flex items-center gap-2 cursor-pointer"
                 >
                   <span>{pastAttempt ? 'Retake Full Exam' : 'Launch Mock Exam'}</span>

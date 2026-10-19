@@ -1,0 +1,18 @@
+{
+  "quiz_runner": "Quiz Evaluation Engine",
+  "mock_exam_simulator": "NISM Mock Exam Simulator",
+  "time_remaining": "Time Remaining",
+  "question_of": "Question {{current}} of {{total}}",
+  "select_option": "Select an answer option to proceed",
+  "explanation": "Detailed Analytical Explanation",
+  "submit_quiz": "Submit Quiz",
+  "submit_exam": "Submit Mock Exam",
+  "scorecard": "Performance Scorecard",
+  "accuracy": "Net Accuracy",
+  "time_spent": "Time Spent",
+  "weak_areas": "Identified Weak Conceptual Areas",
+  "review_weak_concept": "Review Weak Concept",
+  "retake_quiz": "Retake Quiz",
+  "pass": "PASSED",
+  "fail": "NEEDS REVISION"
+}

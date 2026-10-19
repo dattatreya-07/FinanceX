@@ -1,9 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Clock, 
-  Flag
+  Flag,
+  Maximize2,
+  Minimize2,
+  AlertTriangle,
+  ShieldAlert,
+  XCircle,
+  Sparkles
 } from 'lucide-react';
 import { MockExam, Question, AppNavView } from '../../types/schema';
+
+export interface TopicPerformanceStat {
+  topic: string;
+  topicId: number;
+  total: number;
+  correct: number;
+  accuracy: number;
+  status: 'MASTERED' | 'PROFICIENT' | 'MODERATE' | 'NEEDS REVISION';
+}
 
 interface MockExamRunnerProps {
   exam: MockExam;
@@ -16,6 +31,8 @@ interface MockExamRunnerProps {
     wrongCount: number;
     unansweredCount: number;
     timeSpentMins: number;
+    topicBreakdown?: TopicPerformanceStat[];
+    isInvalidated?: boolean;
   }) => void;
   onNavigate: (view: AppNavView) => void;
 }
@@ -23,7 +40,8 @@ interface MockExamRunnerProps {
 export const MockExamRunner: React.FC<MockExamRunnerProps> = ({
   exam,
   questions,
-  onComplete
+  onComplete,
+  onNavigate
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, 'A' | 'B' | 'C' | 'D'>>({});
@@ -31,7 +49,84 @@ export const MockExamRunner: React.FC<MockExamRunnerProps> = ({
   const [secondsLeft, setSecondsLeft] = useState((exam.duration_minutes || 120) * 60);
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
 
-  const handleSubmitExam = () => {
+  // Security and Invalidation State
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [exitCount, setExitCount] = useState(0);
+  const [isExitWarningOpen, setIsExitWarningOpen] = useState(false);
+  const [isInvalidated, setIsInvalidated] = useState(false);
+  const exitCountRef = useRef(0);
+  const isWarningActiveRef = useRef(false);
+  const lastViolationTimeRef = useRef(0);
+  const isSubmittedRef = useRef(false);
+
+  const calculateTopicBreakdown = (): TopicPerformanceStat[] => {
+    const topicMap: Record<number, { title: string; total: number; correct: number }> = {};
+    const topicTitles: Record<number, string> = {
+      1: 'Securities Markets & Capital Ecosystem',
+      2: 'Equity Derivatives & Futures Pricing',
+      3: 'Options Strategies & The Greeks',
+      4: 'Fixed Income, Bonds & Duration',
+      5: 'SEBI Regulations & Code of Conduct',
+      6: 'Fundamental Valuation & Financial Ratios'
+    };
+
+    questions.forEach((q) => {
+      const tid = q.topic_id || 1;
+      if (!topicMap[tid]) {
+        topicMap[tid] = {
+          title: topicTitles[tid] || `Module ${tid}`,
+          total: 0,
+          correct: 0
+        };
+      }
+      topicMap[tid].total++;
+      if (answers[q.question_id] === q.correct_option) {
+        topicMap[tid].correct++;
+      }
+    });
+
+    return Object.entries(topicMap).map(([tidStr, data]) => {
+      const accuracy = data.total > 0 ? Math.round((data.correct / data.total) * 100) : 0;
+      let status: 'MASTERED' | 'PROFICIENT' | 'MODERATE' | 'NEEDS REVISION' = 'NEEDS REVISION';
+      if (accuracy >= 80) status = 'MASTERED';
+      else if (accuracy >= 65) status = 'PROFICIENT';
+      else if (accuracy >= 50) status = 'MODERATE';
+
+      return {
+        topic: data.title,
+        topicId: Number(tidStr),
+        total: data.total,
+        correct: data.correct,
+        accuracy,
+        status
+      };
+    });
+  };
+
+  const handleSubmitExam = (invalidated = false) => {
+    if (isSubmittedRef.current) return;
+    isSubmittedRef.current = true;
+
+    // Exit fullscreen cleanly when submitting
+    if (document.fullscreenElement && document.exitFullscreen) {
+      document.exitFullscreen().catch(() => {});
+    }
+
+    if (invalidated) {
+      onComplete({
+        score: 0,
+        totalMarks: questions.length,
+        passed: false,
+        correctCount: 0,
+        wrongCount: questions.length,
+        unansweredCount: 0,
+        timeSpentMins: Math.round(((exam.duration_minutes || 120) * 60 - secondsLeft) / 60),
+        topicBreakdown: calculateTopicBreakdown(),
+        isInvalidated: true
+      });
+      return;
+    }
+
     let correct = 0;
     let wrong = 0;
     let unanswered = 0;
@@ -58,10 +153,31 @@ export const MockExamRunner: React.FC<MockExamRunnerProps> = ({
       correctCount: correct,
       wrongCount: wrong,
       unansweredCount: unanswered,
-      timeSpentMins: timeSpent
+      timeSpentMins: timeSpent,
+      topicBreakdown: calculateTopicBreakdown()
     });
   };
 
+  // Re-enter Fullscreen handler
+  const requestExamFullscreen = () => {
+    if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen()
+        .then(() => {
+          setIsFullscreen(true);
+          isWarningActiveRef.current = false;
+          setIsExitWarningOpen(false);
+        })
+        .catch(() => {
+          setIsExitWarningOpen(false);
+          isWarningActiveRef.current = false;
+        });
+    } else {
+      setIsExitWarningOpen(false);
+      isWarningActiveRef.current = false;
+    }
+  };
+
+  // Timer effect
   useEffect(() => {
     const timer = setInterval(() => {
       setSecondsLeft((prev) => {
@@ -76,7 +192,87 @@ export const MockExamRunner: React.FC<MockExamRunnerProps> = ({
     return () => clearInterval(timer);
   }, []);
 
-  const currentQ = questions[currentIndex];
+  // Automate Fullscreen on Mount and Monitor Security Violations (3 Strikes Rule)
+  useEffect(() => {
+    // 1. Automatically request fullscreen on test entry
+    if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen()
+        .then(() => setIsFullscreen(true))
+        .catch(() => {
+          // Browser may require user gesture if not triggered directly from click
+          setIsFullscreen(false);
+        });
+    } else if (document.fullscreenElement) {
+      setIsFullscreen(true);
+    }
+
+    // Violation trigger helper (throttled to avoid double counting blur + fullscreenchange)
+    const handleViolation = (reason: string) => {
+      if (isSubmittedRef.current || isInvalidated) return;
+
+      const now = Date.now();
+      if (now - lastViolationTimeRef.current < 1200) {
+        return; // Ignore duplicate events firing simultaneously
+      }
+      lastViolationTimeRef.current = now;
+
+      const nextCount = exitCountRef.current + 1;
+      exitCountRef.current = nextCount;
+      setExitCount(nextCount);
+
+      if (nextCount >= 3) {
+        // Third time -> Terminate Exam Immediately!
+        setIsInvalidated(true);
+        setIsExitWarningOpen(false);
+        isWarningActiveRef.current = false;
+        if (document.fullscreenElement && document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        }
+        setTimeout(() => {
+          handleSubmitExam(true);
+        }, 2200);
+      } else {
+        // Strike 1 or 2 -> Give Warning Modal
+        isWarningActiveRef.current = true;
+        setIsExitWarningOpen(true);
+      }
+    };
+
+    const handleFullscreenChange = () => {
+      const activeFs = !!document.fullscreenElement;
+      setIsFullscreen(activeFs);
+      if (!activeFs && !isSubmittedRef.current && !isInvalidated) {
+        handleViolation('fullscreen_exit');
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden && !isSubmittedRef.current && !isInvalidated) {
+        handleViolation('tab_switch_or_minimize');
+      }
+    };
+
+    const handleWindowBlur = () => {
+      if (!isSubmittedRef.current && !isInvalidated) {
+        handleViolation('window_blur');
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('blur', handleWindowBlur);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('blur', handleWindowBlur);
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    };
+  }, [isInvalidated]);
+
+  const currentQ = questions[currentIndex] || questions[0];
   const userSelected = answers[currentQ.question_id];
   const isMarked = markedForReview[currentQ.question_id] || false;
 
@@ -117,18 +313,52 @@ export const MockExamRunner: React.FC<MockExamRunnerProps> = ({
       {/* NISM Exam Top Status Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-3xl bg-white dark:bg-[#090D17] border border-slate-200 dark:border-slate-800 shadow-xs theme-transition">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-yellow-500/20 dark:text-yellow-300 border border-amber-200 dark:border-yellow-500/40">
-              OFFICIAL NISM SIMULATION
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-cyan-100 text-cyan-800 dark:bg-cyan-500/20 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-500/40">
+              SIMULATED NISM BENCHMARK
             </span>
             <span className="text-xs font-mono text-slate-500 dark:text-slate-400">Code: {exam.exam_code}</span>
+            {exitCount === 0 && (
+              <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-[#00E599]/20 dark:text-[#00E599] border border-emerald-200 dark:border-[#00E599]/40 flex items-center gap-1">
+                <Maximize2 className="w-3 h-3" /> Fullscreen Mode Active (0/2 Warnings)
+              </span>
+            )}
+            {exitCount === 1 && (
+              <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-400 border border-amber-300 dark:border-amber-500/40 animate-pulse flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3" /> Warning 1 of 2 Issued
+              </span>
+            )}
+            {exitCount === 2 && (
+              <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-400 border border-rose-300 dark:border-rose-500/40 animate-pulse flex items-center gap-1">
+                <ShieldAlert className="w-3 h-3" /> FINAL WARNING 2 of 2 (Next Exit = Termination)
+              </span>
+            )}
+            {exitCount >= 3 && (
+              <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-rose-600 text-white dark:bg-rose-500 dark:text-white border border-rose-700 flex items-center gap-1">
+                <XCircle className="w-3 h-3" /> Terminated (3/3 Strikes)
+              </span>
+            )}
           </div>
           <h2 className="text-base sm:text-lg font-display font-black text-slate-900 dark:text-white mt-1">
             {exam.title}
           </h2>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          {/* Fullscreen Re-entry / Check Button */}
+          <button
+            onClick={requestExamFullscreen}
+            className={`p-2.5 rounded-xl border transition cursor-pointer flex items-center gap-1.5 text-xs font-bold ${
+              isFullscreen 
+                ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                : 'bg-amber-100 dark:bg-amber-500/20 border-amber-300 dark:border-amber-500/40 text-amber-800 dark:text-amber-300 animate-pulse'
+            }`}
+            title={isFullscreen ? 'Fullscreen active' : 'Click to enter Fullscreen Exam Mode'}
+          >
+            <Maximize2 className="w-4 h-4" />
+            <span className="hidden sm:inline">{isFullscreen ? 'Fullscreen Active' : 'Enter Fullscreen'}</span>
+          </button>
+
           {/* Countdown Clock */}
           <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-50 dark:bg-slate-900 border border-amber-300 dark:border-amber-500/40 text-amber-800 dark:text-amber-400 font-mono font-bold text-sm shadow-xs">
             <Clock className="w-4 h-4" />
@@ -291,11 +521,119 @@ export const MockExamRunner: React.FC<MockExamRunnerProps> = ({
             {/* Instructions box */}
             <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-400 space-y-1">
               <div className="font-bold text-slate-800 dark:text-slate-300">NISM Guidelines:</div>
-              <p>Passing score is 60%. Negative marks of 0.25 apply for incorrect options. Do not leave calculations blank if confident of eliminating 2 choices.</p>
+              <p>Passing score is 60%. Negative marks of 0.25 apply for incorrect options. Fullscreen mode is strictly monitored with a 3-strike rule.</p>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Security Alert Modal (Warning 1 of 2: Strike 1) */}
+      {isExitWarningOpen && !isInvalidated && exitCount === 1 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-md bg-white dark:bg-[#0B0F19] border-2 border-amber-500 rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl text-center">
+            <div className="w-16 h-16 rounded-2xl bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400 flex items-center justify-center mx-auto shadow-inner">
+              <AlertTriangle className="w-9 h-9" />
+            </div>
+            <div>
+              <span className="text-[10px] font-mono font-bold px-3 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40 uppercase tracking-wide">
+                Security Warning 1 of 2
+              </span>
+              <h3 className="text-xl font-display font-black text-slate-900 dark:text-white mt-2">
+                Fullscreen Exited / Focus Lost
+              </h3>
+            </div>
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              You exited fullscreen mode or switched away from the exam window. Continuous fullscreen is strictly required during simulated NISM benchmarks.
+            </p>
+            <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 text-[11px] text-amber-900 dark:text-amber-300 font-mono text-left space-y-1">
+              <div className="font-bold flex items-center gap-1.5">
+                <ShieldAlert className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                <span>Strikes: 1 / 3 Recorded</span>
+              </div>
+              <p className="text-[10px] text-amber-800/90 dark:text-amber-400">
+                You have <strong>1 warning remaining</strong>. Exiting fullscreen a third time will immediately terminate your exam with 0 marks.
+              </p>
+            </div>
+            <button
+              onClick={requestExamFullscreen}
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold text-xs shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Maximize2 className="w-4 h-4" />
+              <span>Re-enter Fullscreen & Continue Exam</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Security Alert Modal (Warning 2 of 2: Strike 2 - FINAL WARNING) */}
+      {isExitWarningOpen && !isInvalidated && exitCount === 2 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-md bg-white dark:bg-[#0B0F19] border-2 border-rose-500 rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl text-center ring-4 ring-rose-500/20">
+            <div className="w-16 h-16 rounded-2xl bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 flex items-center justify-center mx-auto shadow-inner animate-bounce">
+              <ShieldAlert className="w-9 h-9" />
+            </div>
+            <div>
+              <span className="text-[10px] font-mono font-bold px-3 py-1 rounded-full bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-300 border border-rose-300 dark:border-rose-500/40 uppercase tracking-wide">
+                FINAL WARNING 2 OF 2
+              </span>
+              <h3 className="text-xl font-display font-black text-rose-600 dark:text-rose-400 mt-2">
+                Last Chance Before Termination
+              </h3>
+            </div>
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              This is your <strong>second and final warning</strong>. If you exit fullscreen, switch tabs, or minimize the window again, your exam session will be <strong>permanently terminated and graded 0</strong>.
+            </p>
+            <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800/80 text-[11px] text-rose-900 dark:text-rose-300 font-mono text-left space-y-1">
+              <div className="font-bold flex items-center gap-1.5 text-rose-700 dark:text-rose-400">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                <span>Strikes: 2 / 3 Recorded</span>
+              </div>
+              <p className="text-[10px] text-rose-800/90 dark:text-rose-300">
+                NEXT EXIT = AUTOMATIC FAILURE AND SCORE INVALIDATION.
+              </p>
+            </div>
+            <button
+              onClick={requestExamFullscreen}
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-[#FF2E7E] hover:from-rose-600 hover:to-[#E61E6D] text-white font-bold text-xs shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Maximize2 className="w-4 h-4" />
+              <span>Return to Fullscreen (Final Chance)</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Invalidation Screen (Strike 3 - TERMINATION) */}
+      {isInvalidated && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/95 backdrop-blur-lg animate-fade-in">
+          <div className="w-full max-w-md bg-white dark:bg-[#0B0F19] border-2 border-rose-600 rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl text-center">
+            <div className="w-16 h-16 rounded-2xl bg-rose-600 text-white flex items-center justify-center mx-auto shadow-lg shadow-rose-600/30">
+              <XCircle className="w-10 h-10" />
+            </div>
+            <div>
+              <span className="text-[10px] font-mono font-bold px-3 py-1 rounded-full bg-rose-100 text-rose-900 dark:bg-rose-500/20 dark:text-rose-300 border border-rose-300 dark:border-rose-500/50 uppercase tracking-wide">
+                STRIKE 3 — EXAM TERMINATED
+              </span>
+              <h3 className="text-xl font-display font-black text-rose-600 dark:text-rose-400 mt-2">
+                Attempt Invalidation Notice
+              </h3>
+            </div>
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              You exceeded the maximum limit of 3 fullscreen exits. In accordance with exam proctoring guidelines, this session has been terminated and your score recorded as <strong>0 / {questions.length}</strong>.
+            </p>
+            <div className="text-xs font-mono text-slate-500 dark:text-slate-400 py-1 flex items-center justify-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+              <span>Processing security report & scorecard...</span>
+            </div>
+            <button
+              onClick={() => handleSubmitExam(true)}
+              className="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-bold transition cursor-pointer"
+            >
+              View Invalidation Scorecard Now
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Submit Confirmation Modal */}
       {isSubmitModalOpen && (

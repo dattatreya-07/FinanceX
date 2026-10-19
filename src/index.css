@@ -4,17 +4,17 @@
 
 @layer base {
   :root {
-    /* Light Mode Tokens (Warm, Clean, Premium Educational + Financial) */
-    --color-bg: #F7F7F4;
+    /* Light Mode Tokens (Warm, Clean, Editorial Educational + Financial) */
+    --color-bg: #F8F9FA;
     --color-surface: #FFFFFF;
-    --color-surface-subtle: #F1F2F4;
+    --color-surface-subtle: #F1F5F9;
     --color-surface-elevated: #FFFFFF;
-    --color-surface-hover: #E9EBEF;
-    --color-border: #E4E6EA;
-    --color-border-subtle: #EDEDEE;
-    --color-text-primary: #111318;
-    --color-text-secondary: #626975;
-    --color-text-muted: #949BA6;
+    --color-surface-hover: #E2E8F0;
+    --color-border: #E2E8F0;
+    --color-border-subtle: #F1F5F9;
+    --color-text-primary: #0F172A;
+    --color-text-secondary: #475569;
+    --color-text-muted: #64748B;
     
     /* Brand & Accent Colors */
     --brand-pink: #FF2E7E;
@@ -41,7 +41,7 @@
     --color-surface-hover: #1E293B;
     --color-border: #1E293B;
     --color-border-subtle: #162032;
-    --color-text-primary: #F1F5F9;
+    --color-text-primary: #F8FAFC;
     --color-text-secondary: #94A3B8;
     --color-text-muted: #64748B;
   }

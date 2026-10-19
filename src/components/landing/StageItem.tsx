@@ -177,17 +177,17 @@ export const StageItem: React.FC<StageItemProps> = ({
                 <p className="text-base sm:text-xl text-slate-700 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
                   Financial freedom means having enough financial knowledge, assets and control over your decisions to reduce dependence on a single source of income.
                 </p>
-                <div className="p-4 rounded-2xl bg-white/90 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 max-w-xl mx-auto shadow-sm">
+                <div className="p-4 rounded-2xl bg-white/50 dark:bg-slate-950/80 border border-white/60 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 max-w-xl mx-auto shadow-md backdrop-blur-md">
                   FinanceX helps you understand markets, investing, risk and financial decisions through structured learning and simulation.
                 </div>
                 <div className="flex flex-wrap justify-center items-center gap-2 font-mono font-bold text-xs text-slate-700 dark:text-slate-300">
-                  <span className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">Knowledge</span>
+                  <span className="px-3 py-1.5 rounded-lg bg-white/50 dark:bg-slate-900 border border-white/60 dark:border-slate-800">Knowledge</span>
                   <span>→</span>
-                  <span className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">Income</span>
+                  <span className="px-3 py-1.5 rounded-lg bg-white/50 dark:bg-slate-900 border border-white/60 dark:border-slate-800">Income</span>
                   <span>→</span>
-                  <span className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">Investing</span>
+                  <span className="px-3 py-1.5 rounded-lg bg-white/50 dark:bg-slate-900 border border-white/60 dark:border-slate-800">Investing</span>
                   <span>→</span>
-                  <span className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-emerald-600 dark:text-[#00E599]">Risk Management</span>
+                  <span className="px-3 py-1.5 rounded-lg bg-white/50 dark:bg-slate-900 border border-white/60 dark:border-slate-800 text-emerald-600 dark:text-[#00E599]">Risk Management</span>
                   <span>→</span>
                   <span className="px-3 py-1.5 rounded-lg bg-[#FF2E7E] text-white">Financial Freedom</span>
                 </div>
@@ -206,7 +206,7 @@ export const StageItem: React.FC<StageItemProps> = ({
                 <p className="text-base sm:text-xl text-slate-700 dark:text-slate-300 max-w-xl mx-auto">
                   Understand it. Manage it. Make better decisions with it.
                 </p>
-                <div className="p-6 rounded-3xl bg-white/90 dark:bg-slate-950/85 border border-pink-200 dark:border-rose-500/30 shadow-xl max-w-xl mx-auto space-y-3">
+                <div className="p-6 rounded-3xl bg-white/50 dark:bg-slate-950/85 border border-rose-300 dark:border-rose-500/30 shadow-xl max-w-xl mx-auto space-y-3 backdrop-blur-md">
                   <div className="text-2xl sm:text-4xl font-display font-black text-[#FF2E7E]">
                     MONEY IS A TOOL. NOT THE DESTINATION.
                   </div>
@@ -228,7 +228,7 @@ export const StageItem: React.FC<StageItemProps> = ({
                 </p>
                 <div className="flex flex-wrap justify-center gap-3 font-mono font-bold text-xs text-slate-800 dark:text-slate-200">
                   {['Knowledge', 'Risk', 'Strategy', 'Discipline', 'Execution'].map((item, idx) => (
-                    <span key={idx} className="px-4 py-2 rounded-xl bg-white/90 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 shadow-xs">
+                    <span key={idx} className="px-4 py-2 rounded-xl bg-white/50 dark:bg-slate-950/80 border border-white/60 dark:border-slate-800 shadow-xs backdrop-blur-md">
                       {item}
                     </span>
                   ))}
@@ -249,11 +249,11 @@ export const StageItem: React.FC<StageItemProps> = ({
                   Every financial opportunity carries risk. The goal is not to eliminate risk, but to understand, measure and manage it.
                 </p>
                 <div className="flex flex-wrap justify-center items-center gap-2 font-mono font-bold text-xs text-slate-800 dark:text-slate-200">
-                  <span className="px-3.5 py-2 rounded-xl bg-white/90 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800">Risk</span>
+                  <span className="px-3.5 py-2 rounded-xl bg-white/50 dark:bg-slate-950/80 border border-white/60 dark:border-slate-800 backdrop-blur-md">Risk</span>
                   <span>→</span>
-                  <span className="px-3.5 py-2 rounded-xl bg-white/90 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800">Analysis</span>
+                  <span className="px-3.5 py-2 rounded-xl bg-white/50 dark:bg-slate-950/80 border border-white/60 dark:border-slate-800 backdrop-blur-md">Analysis</span>
                   <span>→</span>
-                  <span className="px-3.5 py-2 rounded-xl bg-white/90 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800">Decision</span>
+                  <span className="px-3.5 py-2 rounded-xl bg-white/50 dark:bg-slate-950/80 border border-white/60 dark:border-slate-800 backdrop-blur-md">Decision</span>
                   <span>→</span>
                   <span className="px-3.5 py-2 rounded-xl bg-emerald-500 text-white dark:text-slate-950">Outcome</span>
                 </div>
@@ -271,7 +271,7 @@ export const StageItem: React.FC<StageItemProps> = ({
                 </h2>
                 <div className="flex flex-wrap justify-center gap-3 font-mono font-bold text-xs sm:text-sm">
                   {['DISCIPLINE', 'PATIENCE', 'FOCUS', 'CONSISTENCY', 'MINDSET'].map((item, idx) => (
-                    <span key={idx} className="px-4 py-2 rounded-xl bg-white/90 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-md">
+                    <span key={idx} className="px-4 py-2 rounded-xl bg-white/50 dark:bg-slate-950/80 border border-white/60 dark:border-slate-800 text-slate-900 dark:text-white shadow-md backdrop-blur-md">
                       {item}
                     </span>
                   ))}
@@ -285,9 +285,9 @@ export const StageItem: React.FC<StageItemProps> = ({
                 <div className="pt-2 flex justify-center gap-4 pointer-events-auto">
                   <button
                     onClick={isAuthenticated ? onEnterApp : onOpenSignUp}
-                    className="px-8 py-4 rounded-full bg-[#FF2E7E] hover:bg-[#E61E6D] text-white font-bold text-xs shadow-md dark:shadow-[0_0_25px_rgba(255,46,126,0.4)] transition flex items-center gap-2 cursor-pointer"
+                    className="px-8 py-4 rounded-full bg-gradient-to-r from-[#FF2E7E] to-[#E61E6D] dark:from-[#00E599] dark:to-[#00B377] text-white dark:text-slate-950 font-bold text-xs shadow-md dark:shadow-[0_0_25px_rgba(0,229,153,0.35)] transition flex items-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
                   >
-                    <span>Enter FinanceX Platform</span>
+                    <span>Open FinanceX</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>

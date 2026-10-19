@@ -28,22 +28,22 @@ export const CinematicStageOverlay: React.FC<StageOverlayProps> = ({
     <div className="relative w-full h-full flex flex-col justify-between max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pointer-events-none select-none z-20">
       {/* Top Header Badge Bar */}
       <div className="flex items-center justify-between w-full z-30">
-        <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-slate-950/85 border border-slate-800/90 text-xs font-mono text-slate-300 backdrop-blur-xl shadow-2xl">
-          <span className="w-2 h-2 rounded-full bg-[#00E599] animate-pulse" />
-          <span className="text-[#00E599] font-bold">STAGE 0{stage}/07</span>
-          <span className="text-slate-600">•</span>
-          <span className="text-slate-300 font-mono font-semibold">FRAME {currentFrame}/{totalFrames}</span>
+        <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-white/90 dark:bg-slate-950/85 border border-slate-200/90 dark:border-slate-800/90 text-xs font-mono text-slate-800 dark:text-slate-300 backdrop-blur-xl shadow-md">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-[#00E599] animate-pulse" />
+          <span className="text-emerald-700 dark:text-[#00E599] font-bold">STAGE 0{stage}/07</span>
+          <span className="text-slate-400 dark:text-slate-600">•</span>
+          <span className="text-slate-700 dark:text-slate-300 font-mono font-semibold">FRAME {currentFrame}/{totalFrames}</span>
         </div>
 
-        <div className="hidden sm:flex items-center gap-3 text-[11px] font-mono text-slate-300 bg-slate-950/75 px-3.5 py-1.5 rounded-full border border-slate-800/80 backdrop-blur-xl shadow-xl">
-          <span className="text-slate-400">SCROLL STORY</span>
-          <div className="w-20 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+        <div className="hidden sm:flex items-center gap-3 text-[11px] font-mono text-slate-700 dark:text-slate-300 bg-white/90 dark:bg-slate-950/75 px-3.5 py-1.5 rounded-full border border-slate-200/90 dark:border-slate-800/80 backdrop-blur-xl shadow-md">
+          <span className="text-slate-500 dark:text-slate-400">SCROLL STORY</span>
+          <div className="w-20 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
             <div 
               className="h-full bg-gradient-to-r from-[#FF2E7E] via-cyan-400 to-[#00E599] transition-all duration-150"
               style={{ width: `${Math.round(p * 100)}%` }}
             />
           </div>
-          <span className="text-white font-bold">{Math.round(p * 100)}%</span>
+          <span className="text-slate-900 dark:text-white font-bold">{Math.round(p * 100)}%</span>
         </div>
       </div>
 

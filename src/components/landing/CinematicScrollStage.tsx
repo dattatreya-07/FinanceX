@@ -452,21 +452,21 @@ export const CinematicScrollStage: React.FC<CinematicScrollStageProps> = ({
                   THE EVOLUTION OF MONEY
                 </h2>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto text-center font-mono font-bold text-xs">
-                  <div className="p-3.5 rounded-2xl bg-white/90 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 shadow-md">
+                  <div className="p-3.5 rounded-2xl bg-white/50 dark:bg-slate-950/80 border border-white/60 dark:border-slate-800 shadow-md backdrop-blur-md">
                     <span className="text-amber-500">BARTER</span>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-normal mt-1">Direct Exchange</p>
+                    <p className="text-[10px] text-slate-600 dark:text-slate-400 font-normal mt-1">Direct Exchange</p>
                   </div>
-                  <div className="p-3.5 rounded-2xl bg-white/90 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 shadow-md">
+                  <div className="p-3.5 rounded-2xl bg-white/50 dark:bg-slate-950/80 border border-white/60 dark:border-slate-800 shadow-md backdrop-blur-md">
                     <span className="text-yellow-500">COINS</span>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-normal mt-1">Precious Metals</p>
+                    <p className="text-[10px] text-slate-600 dark:text-slate-400 font-normal mt-1">Precious Metals</p>
                   </div>
-                  <div className="p-3.5 rounded-2xl bg-white/90 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 shadow-md">
+                  <div className="p-3.5 rounded-2xl bg-white/50 dark:bg-slate-950/80 border border-white/60 dark:border-slate-800 shadow-md backdrop-blur-md">
                     <span className="text-emerald-500">PAPER MONEY</span>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-normal mt-1">Fiat Banking</p>
+                    <p className="text-[10px] text-slate-600 dark:text-slate-400 font-normal mt-1">Fiat Banking</p>
                   </div>
-                  <div className="p-3.5 rounded-2xl bg-white/90 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 shadow-md">
+                  <div className="p-3.5 rounded-2xl bg-white/50 dark:bg-slate-950/80 border border-white/60 dark:border-slate-800 shadow-md backdrop-blur-md">
                     <span className="text-[#FF2E7E]">DIGITAL MONEY</span>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-normal mt-1">Global Systems</p>
+                    <p className="text-[10px] text-slate-600 dark:text-slate-400 font-normal mt-1">Global Systems</p>
                   </div>
                 </div>
                 <p className="text-sm sm:text-base text-slate-700 dark:text-slate-300 max-w-xl mx-auto font-normal leading-relaxed">
@@ -497,7 +497,7 @@ export const CinematicScrollStage: React.FC<CinematicScrollStageProps> = ({
                 <p className="text-sm sm:text-base text-slate-700 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
                   It is understanding money, managing risk, making informed decisions, and building sustainable financial habits.
                 </p>
-                <div className="p-4 rounded-2xl bg-white/80 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 max-w-xl mx-auto">
+                <div className="p-4 rounded-2xl bg-white/50 dark:bg-slate-950/80 border border-white/60 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 max-w-xl mx-auto backdrop-blur-md shadow-md">
                   FinanceX helps turn financial knowledge into practical skills through learning, practice, simulation, and analysis.
                 </div>
               </div>
@@ -519,7 +519,7 @@ export const CinematicScrollStage: React.FC<CinematicScrollStageProps> = ({
                 <h2 className="text-3xl sm:text-5xl lg:text-6xl font-display font-black text-slate-900 dark:text-white tracking-tight">
                   BREAK THE OLD WAY OF THINKING ABOUT MONEY.
                 </h2>
-                <div className="p-6 rounded-3xl bg-white/90 dark:bg-slate-950/85 border border-rose-200 dark:border-rose-500/30 shadow-xl max-w-xl mx-auto space-y-3">
+                <div className="p-6 rounded-3xl bg-white/50 dark:bg-slate-950/85 border border-rose-300 dark:border-rose-500/30 shadow-xl max-w-xl mx-auto space-y-3 backdrop-blur-md">
                   <p className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
                     Move from simply earning money to understanding how money works.
                   </p>
@@ -550,19 +550,19 @@ export const CinematicScrollStage: React.FC<CinematicScrollStageProps> = ({
                   The 1% mindset is not about being rich. It is about thinking differently.
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl mx-auto font-mono text-xs text-left">
-                  <div className="p-3 rounded-2xl bg-white/90 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800">
+                  <div className="p-3 rounded-2xl bg-white/50 dark:bg-slate-950/80 border border-white/60 dark:border-slate-800 backdrop-blur-md shadow-sm">
                     <span className="text-purple-500 font-bold">01</span>
                     <p className="text-slate-800 dark:text-slate-200 font-semibold mt-1">Learn continuously.</p>
                   </div>
-                  <div className="p-3 rounded-2xl bg-white/90 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800">
+                  <div className="p-3 rounded-2xl bg-white/50 dark:bg-slate-950/80 border border-white/60 dark:border-slate-800 backdrop-blur-md shadow-sm">
                     <span className="text-purple-500 font-bold">02</span>
                     <p className="text-slate-800 dark:text-slate-200 font-semibold mt-1">Understand markets.</p>
                   </div>
-                  <div className="p-3 rounded-2xl bg-white/90 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800">
+                  <div className="p-3 rounded-2xl bg-white/50 dark:bg-slate-950/80 border border-white/60 dark:border-slate-800 backdrop-blur-md shadow-sm">
                     <span className="text-purple-500 font-bold">03</span>
                     <p className="text-slate-800 dark:text-slate-200 font-semibold mt-1">Manage risk.</p>
                   </div>
-                  <div className="p-3 rounded-2xl bg-white/90 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800">
+                  <div className="p-3 rounded-2xl bg-white/50 dark:bg-slate-950/80 border border-white/60 dark:border-slate-800 backdrop-blur-md shadow-sm">
                     <span className="text-purple-500 font-bold">04</span>
                     <p className="text-slate-800 dark:text-slate-200 font-semibold mt-1">Make disciplined decisions.</p>
                   </div>
@@ -592,7 +592,7 @@ export const CinematicScrollStage: React.FC<CinematicScrollStageProps> = ({
                 <p className="text-base sm:text-xl text-slate-700 dark:text-slate-300 max-w-xl mx-auto">
                   Every financial opportunity carries risk. Understand it. Measure it. Manage it.
                 </p>
-                <div className="p-4 rounded-2xl bg-white/90 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 max-w-lg mx-auto">
+                <div className="p-4 rounded-2xl bg-white/50 dark:bg-slate-950/80 border border-white/60 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 max-w-lg mx-auto backdrop-blur-md shadow-md">
                   <span className="text-cyan-500 font-bold">Analysis</span> + <span className="text-emerald-500 font-bold">Risk Management</span> + <span className="text-[#FF2E7E] font-bold">Discipline</span> create better financial decisions.
                 </div>
               </div>
@@ -613,7 +613,7 @@ export const CinematicScrollStage: React.FC<CinematicScrollStageProps> = ({
                 </span>
                 <div className="flex flex-wrap justify-center gap-3 font-mono font-bold text-xs sm:text-sm">
                   {['DISCIPLINE', 'PATIENCE', 'FOCUS', 'CONSISTENCY', 'MINDSET'].map((item, idx) => (
-                    <span key={idx} className="px-4 py-2 rounded-xl bg-white/90 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-md">
+                    <span key={idx} className="px-4 py-2 rounded-xl bg-white/50 dark:bg-slate-950/80 border border-white/60 dark:border-slate-800 text-slate-900 dark:text-white shadow-md backdrop-blur-md">
                       {item}
                     </span>
                   ))}
@@ -627,9 +627,9 @@ export const CinematicScrollStage: React.FC<CinematicScrollStageProps> = ({
                 <div className="pt-2 flex justify-center gap-4">
                   <button
                     onClick={isAuthenticated ? onEnterApp : onOpenSignUp}
-                    className="px-8 py-4 rounded-full bg-[#FF2E7E] hover:bg-[#E61E6D] text-white font-bold text-xs shadow-[0_0_25px_rgba(255,46,126,0.4)] transition flex items-center gap-2 cursor-pointer"
+                    className="px-8 py-4 rounded-full bg-gradient-to-r from-[#FF2E7E] to-[#E61E6D] dark:from-[#00E599] dark:to-[#00B377] text-white dark:text-slate-950 font-bold text-xs shadow-md dark:shadow-[0_0_25px_rgba(0,229,153,0.35)] transition flex items-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
                   >
-                    <span>Enter FinanceX Platform</span>
+                    <span>Open FinanceX</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>

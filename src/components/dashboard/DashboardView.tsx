@@ -3,12 +3,15 @@ import {
   Play, 
   ArrowRight, 
   BrainCircuit, 
-  CheckCircle2, 
   TrendingUp, 
   Target, 
-  Calendar,
-  ChevronRight,
-  Sparkles
+  ChevronRight, 
+  RotateCcw,
+  Sparkles,
+  Zap,
+  Flame,
+  Award,
+  BookOpen
 } from 'lucide-react';
 import { 
   User, 
@@ -17,8 +20,11 @@ import {
   AIRecommendation, 
   Goal, 
   DemoAccount,
-  AppNavView 
+  AppNavView,
+  ConceptMastery
 } from '../../types/schema';
+import { spacedReviewService } from '../../services/spacedReviewService';
+import { GamifiedGoalMap } from './GamifiedGoalMap';
 
 interface DashboardViewProps {
   user: User;
@@ -28,6 +34,7 @@ interface DashboardViewProps {
   courses: Course[];
   activeLesson: Lesson;
   demoAccount: DemoAccount;
+  conceptMastery?: ConceptMastery[];
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -37,261 +44,300 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   goals,
   courses,
   activeLesson,
-  demoAccount
+  demoAccount,
+  conceptMastery = []
 }) => {
+  const dueReviews = spacedReviewService.getDueReviews(user.user_id, conceptMastery);
+
+  // Dynamic Level & XP Calculation
+  const userXp = Number(user.xp_points || 0);
+  let userLevel = 'Level 1 (Novice)';
+  if (userXp >= 3000) userLevel = 'Level 5 (Master)';
+  else if (userXp >= 1500) userLevel = 'Level 4 (Specialist)';
+  else if (userXp >= 500) userLevel = 'Level 3 (Practitioner)';
+  else if (userXp >= 100) userLevel = 'Level 2 (Apprentice)';
+
+  const currentCourse = courses.find((c) => c.course_id === activeLesson.course_id) || courses[0];
+  const currentCourseLessonsCount = currentCourse?.estimated_hours ? Math.round(currentCourse.estimated_hours * 2) : 10;
+  const completedLessonsInCourse = activeLesson.is_completed ? 1 : 0;
+  const courseProgressPercent = Math.min(100, Math.round((completedLessonsInCourse / currentCourseLessonsCount) * 100));
+
+  // Virtual Cash Display
+  const formattedBalance = demoAccount.currency === 'INR'
+    ? `₹${(demoAccount.virtual_balance || 1000000).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+    : `$${(demoAccount.virtual_balance || 100000).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+
+  const topRec = recommendations[0] || {
+    recommandation_type: 'REVIEW_WEAK_CONCEPT',
+    reason: 'Continue your learning track to build mastery in financial markets & derivatives.',
+    action_label: 'Resume Module',
+    target_url: 'learn'
+  };
+
+  const activeGoal = goals.find((g) => g.status === 'IN_PROGRESS') || goals[0];
+
   return (
-    <div className="space-y-6" id="dashboard-view">
-      {/* Top Welcome & Telemetry Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-display font-black text-slate-900 dark:text-white">
-              Welcome back, {user.full_name.split(' ')[0]}
-            </h1>
-            <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-[#00E599]/20 dark:text-[#00E599] dark:border-[#00E599]/40">
-              Level 3
-            </span>
+    <div className="space-y-6 w-full max-w-full" id="dashboard-view">
+      {/* 1. TOP HEADER BANNER (EMERALD & WEALTH GOLD TONE) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#0B0F19] p-5 rounded-3xl border border-emerald-200/80 dark:border-slate-800 shadow-[0_10px_30px_rgba(4,120,87,0.06)] theme-transition">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#047857] to-[#10B981] text-white flex items-center justify-center font-bold font-display text-xl shadow-md shadow-emerald-600/25 shrink-0">
+            {user.full_name.charAt(0).toUpperCase()}
           </div>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">
-            Targeting: <strong className="text-slate-900 dark:text-slate-200">NISM-Series-VIII Equity Derivatives</strong> • 29 Days to Exam
-          </p>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-xl font-display font-black text-slate-900 dark:text-white leading-tight">
+                Welcome back, {user.full_name.split(' ')[0]}
+              </h1>
+              <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                {userLevel}
+              </span>
+            </div>
+            <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium flex-wrap">
+              <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold">
+                <Flame className="w-4 h-4 fill-current animate-pulse text-amber-500" /> {user.current_streak || 1} Day Streak
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-500" /> {user.xp_points || 0} Total XP
+              </span>
+              <span>•</span>
+              <span className="text-slate-700 dark:text-slate-300 font-semibold truncate max-w-xs sm:max-w-md">
+                {currentCourse?.course_title || 'NISM Series XV Track'}
+              </span>
+            </div>
+          </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2">
+        {/* Header Action Buttons */}
+        <div className="flex items-center gap-2.5 self-end sm:self-auto">
           <button
             onClick={() => onNavigate('practice-lab')}
-            className="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-400 dark:hover:border-[#00E599]/40 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition flex items-center gap-1.5 shadow-xs"
+            className="px-4 py-2 rounded-2xl bg-emerald-50/90 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 border border-emerald-200/80 dark:border-emerald-800/60 text-xs font-bold text-emerald-800 dark:text-emerald-300 transition flex items-center gap-2 cursor-pointer shadow-xs"
+            title="Open Paper Trading Terminal"
           >
-            <TrendingUp className="w-3.5 h-3.5 text-emerald-600 dark:text-[#00E599]" />
-            <span>Virtual Market: ₹7.42L</span>
+            <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <span className="font-mono">{formattedBalance}</span>
           </button>
+
           <button
             onClick={() => onNavigate('ai-tutor')}
-            className="px-3.5 py-2 rounded-xl bg-[#FF2E7E] hover:bg-[#E61E6D] text-white dark:bg-gradient-to-r dark:from-[#FF2E7E]/20 dark:to-[#00E599]/20 dark:border dark:border-[#FF2E7E]/40 text-xs font-bold transition flex items-center gap-1.5 shadow-xs dark:shadow-[0_0_15px_rgba(255,46,126,0.15)] hover:brightness-110"
+            className="px-4 py-2 rounded-2xl bg-gradient-to-r from-[#047857] via-[#059669] to-[#0D9488] hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs transition flex items-center gap-2 shadow-md shadow-emerald-600/30 cursor-pointer hover:scale-[1.02]"
           >
-            <BrainCircuit className="w-3.5 h-3.5 text-white dark:text-[#FF2E7E]" />
-            <span>Ask AI Tutor</span>
+            <BrainCircuit className="w-4 h-4 text-amber-300" />
+            <span>AI Teacher</span>
           </button>
         </div>
       </div>
 
-      {/* Hero Primary Card: "CONTINUE LEARNING" */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-pink-50 via-rose-50 to-teal-50 dark:from-[#0F172A] dark:via-[#0E1B2C] dark:to-[#0A1A2F] border border-pink-200/80 dark:border-slate-700/80 p-6 sm:p-8 shadow-md dark:shadow-2xl theme-transition">
-        {/* Glow decoration */}
-        <div className="absolute top-0 right-0 w-80 h-80 bg-teal-400/15 dark:bg-[#00E599]/10 rounded-full filter blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 right-1/3 w-60 h-60 bg-pink-400/15 dark:bg-[#FF2E7E]/10 rounded-full filter blur-3xl pointer-events-none" />
+      {/* 2. MAIN CENTERPIECE: GAMIFIED GOAL ROADMAP MAP (Item 5) */}
+      <GamifiedGoalMap user={user} onNavigate={onNavigate} />
 
-        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-          <div className="lg:col-span-8 space-y-3">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono uppercase tracking-widest px-2.5 py-1 rounded-md bg-pink-100 text-[#FF2E7E] font-bold border border-pink-200 dark:bg-[#00E599]/20 dark:text-[#00E599] dark:border-[#00E599]/40">
-                CURRENT MODULE IN PROGRESS
-              </span>
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">Lesson 2 of 18</span>
+      {/* 3. WORKSPACE ACTION CARDS GRID (Item 4) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        
+        {/* LEFT COLUMN (7 COLS): RESUME LEARNING HERO & TOP AI REC */}
+        <div className="lg:col-span-7 space-y-5 flex flex-col justify-between">
+          
+          {/* Hero Action Banner: Resume Learning */}
+          <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-[#0B0F19] border border-emerald-200/80 dark:border-slate-800 p-6 shadow-[0_10px_30px_rgba(4,120,87,0.06)] flex-1 flex flex-col justify-between">
+            <div className="absolute top-0 right-0 w-60 h-60 bg-emerald-400/10 rounded-full filter blur-3xl pointer-events-none" />
+
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-black border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300">
+                  CURRENT LESSON
+                </span>
+                <span className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400">
+                  {courseProgressPercent}% Complete
+                </span>
+              </div>
+
+              <h2 className="text-xl sm:text-2xl font-display font-black text-slate-900 dark:text-white leading-tight">
+                {activeLesson.title}
+              </h2>
+
+              <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                {activeLesson.description || 'Master quantitative valuation principles, risk sensitivities, and market mechanisms.'}
+              </p>
             </div>
 
-            <h2 className="text-xl sm:text-2xl font-display font-black text-slate-900 dark:text-white leading-snug">
-              {activeLesson.title}
-            </h2>
-
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">
-              Master Delta, Gamma, Theta decay, and volatility sensitivity. Prepare for 12 numerical questions in NISM Series VIII.
-            </p>
-
-            <div className="pt-2 flex flex-wrap items-center gap-4">
-              <button
-                onClick={() => onNavigate('learn')}
-                className="px-6 py-3 rounded-xl bg-[#FF2E7E] hover:bg-[#E61E6D] text-white font-bold text-xs shadow-md dark:bg-gradient-to-r dark:from-[#00E599] dark:to-[#00B377] dark:text-slate-950 dark:shadow-[0_0_20px_rgba(0,229,153,0.35)] transition flex items-center gap-2 cursor-pointer"
-              >
-                <Play className="w-4 h-4 fill-current" />
-                <span>Resume Lesson (35 mins)</span>
-              </button>
-
-              <button
-                onClick={() => onNavigate('quizzes')}
-                className="px-4 py-3 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white transition flex items-center gap-2 shadow-xs cursor-pointer"
-              >
-                <span>Take Option Greeks Quiz</span>
-                <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-              </button>
-            </div>
-          </div>
-
-          {/* Right Progress Meter */}
-          <div className="lg:col-span-4 flex flex-col items-center lg:items-end justify-center">
-            <div className="p-5 rounded-2xl bg-white/90 dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800/90 text-center w-full max-w-xs space-y-3 shadow-xs">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-slate-500 dark:text-slate-400 font-mono">Course Completion</span>
-                <span className="font-mono font-bold text-emerald-600 dark:text-[#00E599]">68%</span>
+            {/* Progress Bar & Actions */}
+            <div className="space-y-4 pt-6">
+              <div className="w-full h-2.5 bg-emerald-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-[#059669] via-[#10B981] to-[#F59E0B] rounded-full transition-all duration-500" 
+                  style={{ width: `${Math.max(8, courseProgressPercent)}%` }}
+                />
               </div>
-              <div className="w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-[#FF2E7E] rounded-full w-[68%]" />
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
-                <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                  <span className="text-slate-500 block text-[10px]">COMPLETED</span>
-                  <span className="font-mono font-bold text-slate-900 dark:text-white">12 / 18</span>
-                </div>
-                <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                  <span className="text-slate-500 block text-[10px]">TIME SPENT</span>
-                  <span className="font-mono font-bold text-slate-900 dark:text-white">8.5 Hrs</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Grid: AI Smart Recommendations & Performance Highlights */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left 8 Cols: AI Tutor Recommendations */}
-        <div className="lg:col-span-8 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-xl bg-pink-100 dark:bg-[#FF2E7E]/20 text-[#FF2E7E]">
-                <BrainCircuit className="w-4 h-4" />
-              </div>
-              <h3 className="font-display font-bold text-base text-slate-900 dark:text-white">
-                AI Tutor Adaptive Recommendations
-              </h3>
-            </div>
-            <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">Refreshed 10m ago</span>
-          </div>
-
-          <div className="space-y-3">
-            {recommendations.map((rec) => (
-              <div
-                key={rec.recommandation_id}
-                className="p-4 rounded-2xl bg-white dark:bg-[#0C101B] border border-slate-200 dark:border-slate-800/90 hover:border-pink-300 dark:hover:border-slate-700 transition flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs theme-transition"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-md ${
-                      rec.priority === 'HIGH' 
-                        ? 'bg-pink-100 text-pink-700 border border-pink-200 dark:bg-[#FF2E7E]/20 dark:text-[#FF2E7E] dark:border-[#FF2E7E]/40' 
-                        : 'bg-cyan-100 text-cyan-800 border border-cyan-200 dark:bg-cyan-500/20 dark:text-cyan-400 dark:border-cyan-500/40'
-                    }`}>
-                      {rec.recommandation_type.replace(/_/g, ' ')}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-700 dark:text-slate-300 max-w-xl">
-                    {rec.reason}
-                  </p>
-                </div>
+              <div className="flex items-center justify-between gap-3 pt-1">
+                <button
+                  onClick={() => onNavigate('learn')}
+                  className="px-6 py-3 rounded-2xl bg-gradient-to-r from-[#047857] via-[#059669] to-[#10B981] hover:opacity-95 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition flex items-center gap-2.5 cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
+                >
+                  <Play className="w-4 h-4 fill-current" />
+                  <span>Resume Lesson ({activeLesson.estimated_mins || 20}m)</span>
+                </button>
 
                 <button
-                  onClick={() => {
-                    if (rec.target_url?.includes('practice-lab')) onNavigate('practice-lab');
-                    else if (rec.target_url?.includes('mock-exams')) onNavigate('mock-exams');
-                    else onNavigate('learn');
-                  }}
-                  className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-emerald-700 dark:text-[#00E599] whitespace-nowrap flex items-center justify-center gap-1.5 transition self-start sm:self-auto shadow-xs"
+                  onClick={() => onNavigate('quizzes')}
+                  className="px-4 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-400 text-xs font-bold text-slate-700 dark:text-slate-200 transition flex items-center gap-1.5 cursor-pointer"
                 >
-                  <span>{rec.action_label}</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <span>Practice Quiz</span>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
                 </button>
               </div>
-            ))}
+            </div>
           </div>
 
-          {/* Quick Study Plan Roadmap */}
-          <div className="p-5 rounded-3xl bg-white dark:bg-[#0B0F19] border border-slate-200 dark:border-slate-800 space-y-4 shadow-xs theme-transition">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-                <h4 className="font-display font-bold text-sm text-slate-900 dark:text-white">This Week's Study Schedule</h4>
+          {/* AI Recommended Next Action (Compact Card) */}
+          <div className="p-4 rounded-2xl bg-white dark:bg-[#0B0F19] border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2.5 rounded-2xl bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 shrink-0">
+                <Sparkles className="w-4 h-4" />
               </div>
-              <button
-                onClick={() => onNavigate('study-plans')}
-                className="text-xs text-pink-600 dark:text-[#00E599] font-semibold hover:underline"
-              >
-                Full Calendar
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80">
-                <div className="text-[10px] font-mono text-slate-500 mb-1">TODAY • TUESDAY</div>
-                <div className="font-bold text-slate-900 dark:text-slate-200">Option Greeks & Theta Decay</div>
-                <div className="text-[10px] text-emerald-700 dark:text-[#00E599] mt-1.5 flex items-center gap-1 font-semibold">
-                  <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Ready for Quiz
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-mono font-bold text-amber-700 dark:text-amber-400 uppercase">AI Recommendation</span>
                 </div>
-              </div>
-              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80">
-                <div className="text-[10px] font-mono text-slate-500 mb-1">THURSDAY</div>
-                <div className="font-bold text-slate-900 dark:text-slate-200">Multi-Leg Options Strategies</div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5">28 mins • Theory & Math</div>
-              </div>
-              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80">
-                <div className="text-[10px] font-mono text-slate-500 mb-1">SATURDAY</div>
-                <div className="font-bold text-slate-900 dark:text-slate-200">Full NISM Mock Exam #1</div>
-                <div className="text-[10px] text-pink-600 dark:text-[#FF2E7E] mt-1.5 font-semibold">120 mins • Timed Test</div>
+                <p className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate">
+                  {topRec.reason}
+                </p>
               </div>
             </div>
+
+            <button
+              onClick={() => {
+                if (topRec.target_url?.includes('practice-lab')) onNavigate('practice-lab');
+                else if (topRec.target_url?.includes('mock-exams')) onNavigate('mock-exams');
+                else onNavigate('learn');
+              }}
+              className="px-4 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-xs font-bold text-emerald-700 dark:text-emerald-400 transition shrink-0 flex items-center gap-1 cursor-pointer border border-emerald-200/80 dark:border-slate-800"
+            >
+              <span>{topRec.action_label}</span>
+              <ArrowRight className="w-3 h-3" />
+            </button>
           </div>
+
         </div>
 
-        {/* Right 4 Cols: Goals, Streak & Practice Lab Summary */}
-        <div className="lg:col-span-4 space-y-6">
-          {/* Active Goals */}
-          <div className="p-5 rounded-3xl bg-white dark:bg-[#0C101B] border border-slate-200 dark:border-slate-800 space-y-4 shadow-xs theme-transition">
+        {/* RIGHT SIDEBAR COLUMN (5 COLS): FEATURE LAUNCHPAD TILES */}
+        <div className="lg:col-span-5 space-y-5 flex flex-col justify-between">
+          
+          {/* Tile 1: Spaced Review / Active Practice Quick Launch */}
+          <div className="p-5 rounded-3xl bg-white dark:bg-[#0B0F19] border border-emerald-200/80 dark:border-slate-800 space-y-2.5 shadow-[0_10px_30px_rgba(4,120,87,0.06)]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Target className="w-4 h-4 text-emerald-600 dark:text-[#00E599]" />
-                <h4 className="font-display font-bold text-sm text-slate-900 dark:text-white">Active Goals</h4>
-              </div>
-              <button onClick={() => onNavigate('goals')} className="text-xs text-pink-600 dark:text-[#00E599] font-semibold hover:underline">
-                View All
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {goals.slice(0, 3).map((goal) => (
-                <div key={goal.goal_id} className="space-y-1.5">
-                  <div className="flex justify-between text-xs">
-                    <span className="font-semibold text-slate-800 dark:text-slate-200 line-clamp-1">{goal.goal_title}</span>
-                    <span className="font-mono text-emerald-700 dark:text-[#00E599] font-bold">{goal.current_progress_percent}%</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-emerald-500 to-teal-600 dark:from-[#00E599] dark:to-[#00B377] rounded-full"
-                      style={{ width: `${goal.current_progress_percent}%` }}
-                    />
-                  </div>
-                  <div className="text-[10px] text-slate-500 flex justify-between">
-                    <span>Deadline: {goal.target_date}</span>
-                    <span className="uppercase">{goal.status.replace('_', ' ')}</span>
-                  </div>
+                <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400">
+                  <Zap className="w-4 h-4" />
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Practice Lab Sandbox Snapshot */}
-          <div className="p-5 rounded-3xl bg-white dark:bg-gradient-to-br dark:from-slate-900 dark:to-[#0A1424] border border-slate-200 dark:border-slate-800 space-y-3 shadow-xs theme-transition">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-mono text-slate-500 dark:text-slate-400">PRACTICE LAB PORTFOLIO</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-[#00E599] font-mono font-bold">
-                +₹47,200 (6.4%)
+                <h3 className="text-xs font-bold text-slate-900 dark:text-white">
+                  Spaced Practice Drill
+                </h3>
+              </div>
+              <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300">
+                {dueReviews.length} Due Today
               </span>
             </div>
-            <div>
-              <div className="text-2xl font-mono font-black text-slate-900 dark:text-white">₹7,42,500.00</div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Available Cash Balance</div>
-            </div>
 
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-              <span className="text-slate-600 dark:text-slate-400">Holdings: ₹2,94,700</span>
+            <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
+              {dueReviews.length > 0 
+                ? `Due: ${dueReviews[0].topic_name}`
+                : 'All concept review stages up to date.'}
+            </p>
+
+            <div className="flex items-center justify-between pt-2">
               <button
-                onClick={() => onNavigate('practice-lab')}
-                className="text-emerald-700 dark:text-[#00E599] font-bold hover:underline flex items-center gap-1"
+                onClick={() => onNavigate('quizzes')}
+                className="text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-white flex items-center gap-1 cursor-pointer"
               >
-                <span>Open Terminal</span>
-                <ChevronRight className="w-3.5 h-3.5" />
+                <BookOpen className="w-3.5 h-3.5 text-slate-400" />
+                <span>Question Bank</span>
+              </button>
+
+              <button
+                onClick={() => onNavigate('quizzes', dueReviews.length > 0 ? { topicId: dueReviews[0].topic_id, isSpacedReview: true } : undefined)}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#047857] to-[#059669] hover:from-emerald-700 hover:to-emerald-800 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-md shadow-emerald-600/20"
+              >
+                <RotateCcw className="w-3 h-3 text-amber-300" />
+                <span>{dueReviews.length > 0 ? 'Start Review' : 'Practice Quiz'}</span>
               </button>
             </div>
           </div>
+
+          {/* Tile 2: Simulated Trading Sandbox Summary */}
+          <div className="p-5 rounded-3xl bg-white dark:bg-[#0B0F19] border border-emerald-200/80 dark:border-slate-800 space-y-2.5 shadow-[0_10px_30px_rgba(4,120,87,0.06)]">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-[#00E599]">
+                  <TrendingUp className="w-4 h-4" />
+                </div>
+                <h3 className="text-xs font-bold text-slate-900 dark:text-white">
+                  Simulated Paper Trading
+                </h3>
+              </div>
+              <span className="text-[10px] font-mono font-bold text-slate-400">
+                INR SANDBOX
+              </span>
+            </div>
+
+            <div className="flex items-baseline justify-between">
+              <div className="text-lg font-mono font-black text-slate-900 dark:text-white">
+                {formattedBalance}
+              </div>
+              <span className="text-[10px] text-slate-400">0 Real Risk</span>
+            </div>
+
+            <div className="pt-1 flex items-center justify-between">
+              <span className="text-[11px] text-slate-500">Live order matching</span>
+              <button
+                onClick={() => onNavigate('practice-lab')}
+                className="text-xs font-bold text-emerald-600 dark:text-[#00E599] hover:underline flex items-center gap-0.5 cursor-pointer"
+              >
+                <span>Open Terminal</span>
+                <ChevronRight className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+
+          {/* Tile 3: Goal Tracking Launcher */}
+          <div className="p-5 rounded-3xl bg-white dark:bg-[#0B0F19] border border-emerald-200/80 dark:border-slate-800 space-y-2.5 shadow-[0_10px_30px_rgba(4,120,87,0.06)]">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400">
+                  <Target className="w-4 h-4" />
+                </div>
+                <h3 className="text-xs font-bold text-slate-900 dark:text-white">
+                  Active Goal
+                </h3>
+              </div>
+              <button
+                onClick={() => onNavigate('goals')}
+                className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
+              >
+                View All ({goals.length})
+              </button>
+            </div>
+
+            {activeGoal ? (
+              <div className="space-y-2 pt-1">
+                <div className="flex justify-between text-xs font-medium">
+                  <span className="text-slate-800 dark:text-slate-200 font-semibold truncate max-w-[180px]">{activeGoal.goal_title}</span>
+                  <span className="font-mono text-emerald-700 dark:text-emerald-400 font-bold">{activeGoal.current_progress_percent}%</span>
+                </div>
+                <div className="w-full h-2 bg-emerald-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-[#059669] via-[#10B981] to-[#F59E0B] rounded-full transition-all"
+                    style={{ width: `${activeGoal.current_progress_percent}%` }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400">No active goal configured.</p>
+            )}
+          </div>
+
         </div>
       </div>
     </div>

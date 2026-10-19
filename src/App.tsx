@@ -1,5 +1,16 @@
-import React, { useState } from 'react';
-import { AppNavView, User, Course, Lesson, Quiz, MockExam, Goal, Notification, DemoHolding, DemoTransaction, DemoAccount, Achievement, UserAchievement, Certificate, QuizAttempt, MockExamAttempt } from './types/schema';
+import React, { useState, useEffect } from 'react';
+import { ShieldAlert } from 'lucide-react';
+import { authService } from './services/authService';
+import { adminService } from './services/adminService';
+import { courseService } from './services/courseService';
+import { quizService } from './services/quizService';
+import { examService } from './services/examService';
+import { tradingService } from './services/tradingService';
+import { goalService } from './services/goalService';
+import { notificationService } from './services/notificationService';
+import { learningLoopService } from './services/learningLoopService';
+import { spacedReviewService } from './services/spacedReviewService';
+import { AppNavView, User, Course, Lesson, LessonContent, LessonResource, Quiz, Question, MockExam, Certification, Goal, Notification, DemoHolding, DemoTransaction, DemoAccount, Achievement, UserAchievement, Certificate, QuizAttempt, MockExamAttempt, ConceptMastery } from './types/schema';
 import { 
   MOCK_CURRENT_USER, 
   MOCK_COURSES, 
@@ -29,13 +40,14 @@ import {
   MOCK_QUIZ_ATTEMPTS,
   MOCK_EXAM_ATTEMPTS
 } from './data/mockData';
+import { TAMIL_LESSONS, TAMIL_LESSON_CONTENTS } from './data/translations/tamilContent';
+import { NISM_XV_CHAPTERS } from './data/nismFullCurriculum';
 
 // Brand & Layout
 import { BootExperience } from './components/brand/BootExperience';
 import { AppShell } from './components/layout/AppShell';
 import { AuthModal } from './components/auth/AuthModal';
 import { PersonalizationFlow, UserPreferences } from './components/onboarding/PersonalizationFlow';
-import { MoneyEvolutionJourney } from './components/moneyEvolution/MoneyEvolutionJourney';
 import { LandingPageView } from './components/landing/LandingPageView';
 
 // Primary Views
@@ -59,6 +71,43 @@ import { NotificationsView } from './components/notifications/NotificationsView'
 import { ProfileView } from './components/profile/ProfileView';
 import { SettingsView } from './components/settings/SettingsView';
 import { FigmaBlueprintView } from './components/blueprint/FigmaBlueprintView';
+import { FinancialCalculatorsView } from './components/tools/FinancialCalculatorsView';
+import { CompetitiveArenaView } from './components/arena/CompetitiveArenaView';
+import { AdminPortalView } from './components/admin/AdminPortalView';
+
+const INITIAL_FRESH_USER: User = {
+  user_id: 'guest',
+  full_name: 'New Learner',
+  email: 'learner@financex.com',
+  phone_number: '',
+  account_status: 'ACTIVE',
+  knowledge_level_id: 1,
+  current_streak: 0,
+  longest_streak: 0,
+  xp_points: 0,
+  social_links: []
+};
+
+const INITIAL_FRESH_DEMO_ACCOUNT: DemoAccount = {
+  demo_account_id: 1,
+  user_id: 1,
+  virtual_balance: 1000000.00,
+  currency: 'INR',
+  initial_capital: 1000000.00
+};
+
+const INITIAL_FRESH_NOTIFICATIONS: Notification[] = [
+  {
+    notification_id: 1,
+    user_id: 1,
+    type: 'ALERT',
+    title: 'Welcome to FinanceX!',
+    message: 'Your institutional financial sandbox & NISM learning terminal is ready with ₹10,00,000 virtual capital.',
+    read: false,
+    created_at: new Date().toISOString().substring(0, 10),
+    priority: 'HIGH'
+  }
+];
 
 export default function App() {
   // App-level State
@@ -73,27 +122,30 @@ export default function App() {
     return true;
   });
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register' | 'admin'>('login');
   const [isOnboarding, setIsOnboarding] = useState<boolean>(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
-  const [isMoneyEvolutionOpen, setIsMoneyEvolutionOpen] = useState<boolean>(false);
 
   const [currentView, setCurrentView] = useState<AppNavView>('landing');
-  const [user, setUser] = useState<User>(MOCK_CURRENT_USER);
+  const [user, setUser] = useState<User>(INITIAL_FRESH_USER);
 
   // Curriculum State
-  const [courses] = useState<Course[]>(MOCK_COURSES);
-  const [lessons] = useState<Lesson[]>(MOCK_LESSONS);
+  const [courses, setCourses] = useState<Course[]>(MOCK_COURSES);
+  const [lessons, setLessons] = useState<Lesson[]>(MOCK_LESSONS);
+  const [lessonContents, setLessonContents] = useState<LessonContent[]>(MOCK_LESSON_CONTENTS);
+  const [lessonResources, setLessonResources] = useState<LessonResource[]>(MOCK_LESSON_RESOURCES);
   const [activeCourse, setActiveCourse] = useState<Course>(MOCK_COURSES[0]);
-  const [activeLesson, setActiveLesson] = useState<Lesson>(MOCK_LESSONS[1]); // Default to Lesson 2 (Option Greeks)
+  const [activeLesson, setActiveLesson] = useState<Lesson>(() => ({ ...MOCK_LESSONS[0], is_completed: false }));
 
   // Quiz & Mock Exam State
-  const [quizzes] = useState<Quiz[]>(MOCK_QUIZZES);
+  const [quizzes, setQuizzes] = useState<Quiz[]>(MOCK_QUIZZES);
+  const [questions, setQuestions] = useState<Question[]>(MOCK_QUESTIONS);
   const [activeQuiz, setActiveQuiz] = useState<Quiz | null>(null);
   const [quizScoreResult, setQuizScoreResult] = useState<{ score: number; totalQuestions: number; correctCount: number } | null>(null);
-  const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>(MOCK_QUIZ_ATTEMPTS);
+  const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>([]);
 
-  const [mockExams] = useState<MockExam[]>(MOCK_EXAMS);
+  const [mockExams, setMockExams] = useState<MockExam[]>(MOCK_EXAMS);
+  const [certificationsList, setCertificationsList] = useState<Certification[]>(MOCK_CERTIFICATIONS);
   const [activeMockExam, setActiveMockExam] = useState<MockExam | null>(null);
   const [mockExamStatsResult, setMockExamStatsResult] = useState<{
     score: number;
@@ -103,28 +155,169 @@ export default function App() {
     wrongCount: number;
     unansweredCount: number;
     timeSpentMins: number;
+    topicBreakdown?: any[];
+    isInvalidated?: boolean;
   } | null>(null);
-  const [mockExamAttempts, setMockExamAttempts] = useState<MockExamAttempt[]>(MOCK_EXAM_ATTEMPTS);
+  const [mockExamAttempts, setMockExamAttempts] = useState<MockExamAttempt[]>([]);
 
-  // Simulation & Paper Trading State
-  const [demoAccount, setDemoAccount] = useState<DemoAccount>(MOCK_DEMO_ACCOUNT);
-  const [instruments] = useState(MOCK_INSTRUMENTS);
-  const [holdings, setHoldings] = useState<DemoHolding[]>(MOCK_DEMO_HOLDINGS);
-  const [transactions, setTransactions] = useState<DemoTransaction[]>(MOCK_DEMO_TRANSACTIONS);
+  // Simulation & Paper Trading State (Fresh ₹10,00,000 Portfolio)
+  const [demoAccount, setDemoAccount] = useState<DemoAccount>(INITIAL_FRESH_DEMO_ACCOUNT);
+  const [instruments, setInstruments] = useState(MOCK_INSTRUMENTS);
+  const [holdings, setHoldings] = useState<DemoHolding[]>([]);
+  const [transactions, setTransactions] = useState<DemoTransaction[]>([]);
 
   // Goals, Badges & Notifications
-  const [goals, setGoals] = useState<Goal[]>(MOCK_GOALS);
-  const [achievements] = useState<Achievement[]>(MOCK_ACHIEVEMENTS);
-  const [userAchievements, setUserAchievements] = useState<UserAchievement[]>(MOCK_USER_ACHIEVEMENTS);
-  const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [achievements, setAchievementsList] = useState<Achievement[]>(MOCK_ACHIEVEMENTS);
+  const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>(INITIAL_FRESH_NOTIFICATIONS);
+  const [userCertificates, setUserCertificates] = useState<Certificate[]>([]);
+  const [adminLearners, setAdminLearners] = useState<User[]>([]);
 
   // AI Tutor Prompt Handoff
   const [aiTutorPrompt, setAiTutorPrompt] = useState<string>('');
 
+  // 1. Initial catalog data loading from Supabase service layer
+  const loadCatalogData = async () => {
+    try {
+      const [loadedCourses, loadedQuizzes, loadedExams, loadedInstruments, loadedQuestions] = await Promise.all([
+        courseService.getCourses(),
+        quizService.getQuizzes(),
+        examService.getMockExams(),
+        tradingService.getInstruments(),
+        quizService.getQuizQuestions(1)
+      ]);
+      if (loadedCourses && loadedCourses.length > 0) {
+        setCourses(loadedCourses);
+        setActiveCourse(loadedCourses[0]);
+      }
+      if (loadedQuizzes && loadedQuizzes.length > 0) setQuizzes(loadedQuizzes);
+      if (loadedExams && loadedExams.length > 0) setMockExams(loadedExams);
+      if (loadedInstruments && loadedInstruments.length > 0) setInstruments(loadedInstruments);
+      if (loadedQuestions && loadedQuestions.length > 0) setQuestions(loadedQuestions);
+      adminService.getLearners().then((list) => {
+        if (list && list.length > 0) setAdminLearners(list);
+      });
+    } catch (err) {
+      console.error('Error loading initial catalog data from services:', err);
+    }
+  };
+
+  useEffect(() => {
+    loadCatalogData();
+    const handleLangChange = () => {
+      loadCatalogData();
+    };
+    const handleXpUpdate = (e: any) => {
+      if (e?.detail) {
+        setUser((prev) => ({
+          ...prev,
+          xp_points: e.detail.xp_points,
+          current_streak: e.detail.current_streak,
+          longest_streak: e.detail.longest_streak
+        }));
+      }
+    };
+    window.addEventListener('financex-xp-updated', handleXpUpdate);
+    return () => {
+      window.removeEventListener('financex-language-change', handleLangChange);
+      window.removeEventListener('financex-xp-updated', handleXpUpdate);
+    };
+  }, []);
+
+  // 2. Restore Supabase / Local Auth Session & Subscribe to Auth State Changes
+  useEffect(() => {
+    const initAuth = async () => {
+      const session = await authService.getSession();
+      if (session?.user) {
+        setIsAuthenticated(true);
+        const profile = await authService.getProfile(session.user.id);
+        if (profile) {
+          setUser(profile);
+          const saved = authService.loadUserData(profile.email);
+          if (saved) {
+            if (saved.demoAccount) setDemoAccount(saved.demoAccount);
+            if (saved.holdings) setHoldings(saved.holdings);
+            if (saved.transactions) setTransactions(saved.transactions);
+            if (saved.goals) setGoals(saved.goals);
+            if (saved.notifications) setNotifications(saved.notifications);
+            if (saved.quizAttempts) setQuizAttempts(saved.quizAttempts);
+            if (saved.mockExamAttempts) setMockExamAttempts(saved.mockExamAttempts);
+          }
+        }
+      }
+    };
+    initAuth();
+
+    const sub = authService.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        setIsAuthenticated(true);
+        const profile = await authService.getProfile(session.user.id);
+        if (profile) {
+          setUser(profile);
+          const saved = authService.loadUserData(profile.email);
+          if (saved) {
+            if (saved.demoAccount) setDemoAccount(saved.demoAccount);
+            if (saved.holdings) setHoldings(saved.holdings);
+            if (saved.transactions) setTransactions(saved.transactions);
+            if (saved.goals) setGoals(saved.goals);
+            if (saved.notifications) setNotifications(saved.notifications);
+            if (saved.quizAttempts) setQuizAttempts(saved.quizAttempts);
+            if (saved.mockExamAttempts) setMockExamAttempts(saved.mockExamAttempts);
+          }
+        }
+      } else if (_event === 'SIGNED_OUT') {
+        setIsAuthenticated(false);
+        setUser(INITIAL_FRESH_USER);
+        setDemoAccount(INITIAL_FRESH_DEMO_ACCOUNT);
+        setHoldings([]);
+        setTransactions([]);
+        setGoals([]);
+        setQuizAttempts([]);
+        setMockExamAttempts([]);
+        setUserCertificates([]);
+        setNotifications(INITIAL_FRESH_NOTIFICATIONS);
+        setCurrentView('landing');
+      }
+    });
+
+    return () => {
+      sub?.unsubscribe?.();
+    };
+  }, []);
+
+  // 3. User-specific authenticated data loading from Database
+  useEffect(() => {
+    if (!isAuthenticated || user.user_id === 'guest') return;
+    const loadUserData = async () => {
+      try {
+        const userIdStr = String(user.user_id);
+        const [acc, hld, txs, gls, notifs, certs] = await Promise.all([
+          tradingService.getDemoAccount(userIdStr),
+          tradingService.getHoldings(userIdStr),
+          tradingService.getTransactions(userIdStr),
+          goalService.getGoals(userIdStr),
+          notificationService.getNotifications(userIdStr),
+          examService.getCertificates(userIdStr)
+        ]);
+        if (acc) setDemoAccount(acc);
+        if (hld && hld.length > 0) setHoldings(hld);
+        if (txs && txs.length > 0) setTransactions(txs);
+        if (gls && gls.length > 0) setGoals(gls);
+        if (notifs && notifs.length > 0) setNotifications(notifs);
+        if (certs && certs.length > 0) setUserCertificates(certs);
+      } catch (err) {
+        console.warn('Non-blocking user data load:', err);
+      }
+    };
+    loadUserData();
+  }, [isAuthenticated, user.user_id]);
+
   // Navigation Handler
   const handleNavigate = (view: AppNavView, payload?: any) => {
     if (view === 'money-evolution') {
-      setIsMoneyEvolutionOpen(true);
+      setCurrentView('landing');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -133,8 +326,31 @@ export default function App() {
       if (payload.lesson) setActiveLesson(payload.lesson);
     }
 
-    if (view === 'ai-tutor' && payload?.prompt) {
-      setAiTutorPrompt(payload.prompt);
+    if (view === 'quizzes' && payload) {
+      if (payload.topicId) {
+        const targetQuiz = quizzes.find((q) => q.topic_id === payload.topicId) || quizzes[0];
+        if (targetQuiz) {
+          setActiveQuiz(targetQuiz);
+          setQuizScoreResult(null);
+        }
+      }
+    }
+
+    if (view === 'ai-tutor') {
+      setAiTutorPrompt(payload?.prompt || '');
+    }
+
+    if ((view === 'admin' || view === 'figma-blueprint') && !adminService.hasAdminPrivileges(user)) {
+      console.warn('[FinanceX RBAC] Access denied to administrative view:', view);
+      setCurrentView('dashboard');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    if (view === 'admin' && adminService.hasAdminPrivileges(user)) {
+      adminService.getLearners().then(list => {
+        if (list && list.length > 0) setAdminLearners(list);
+      });
     }
 
     setCurrentView(view);
@@ -164,8 +380,13 @@ export default function App() {
     setIsAuthModalOpen(true);
   };
 
-  // Trade Execution
-  const handleExecuteTrade = (trade: {
+  const handleOpenAdminSignIn = () => {
+    setAuthModalMode('admin');
+    setIsAuthModalOpen(true);
+  };
+
+  // Authoritative Paper Trade Execution (Server/Database validated)
+  const handleExecuteTrade = async (trade: {
     instrumentId: number;
     type: 'BUY' | 'SELL';
     quantity: number;
@@ -173,17 +394,31 @@ export default function App() {
   }) => {
     const totalAmount = trade.quantity * trade.price;
 
-    if (trade.type === 'BUY') {
-      if (demoAccount.virtual_balance < totalAmount) {
-        alert('Insufficient virtual balance to execute this trade.');
-        return;
-      }
+    // Call authoritative server/service backend
+    const result = await tradingService.executeTrade(
+      String(user.user_id),
+      String(demoAccount.demo_account_id),
+      String(trade.instrumentId),
+      trade.type,
+      trade.quantity,
+      trade.price
+    );
 
+    if (!result.success) {
+      alert(result.error || 'Trade execution failed.');
+      return;
+    }
+
+    // Refresh updated balance from authoritative response
+    if (result.newBalance !== undefined) {
       setDemoAccount((prev) => ({
         ...prev,
-        virtual_balance: prev.virtual_balance - totalAmount
+        virtual_balance: result.newBalance!
       }));
+    }
 
+    // Update holdings state securely
+    if (trade.type === 'BUY') {
       setHoldings((prev) => {
         const existing = prev.find((h) => h.instrument_id === trade.instrumentId);
         if (existing) {
@@ -209,27 +444,11 @@ export default function App() {
       });
     } else {
       // SELL
-      const existing = holdings.find((h) => h.instrument_id === trade.instrumentId);
-      if (!existing || existing.quantity < trade.quantity) {
-        alert('Cannot sell more shares than currently held.');
-        return;
-      }
-
-      setDemoAccount((prev) => ({
-        ...prev,
-        virtual_balance: prev.virtual_balance + totalAmount
-      }));
-
-      setHoldings((prev) => {
-        return prev
-          .map((h) => {
-            if (h.instrument_id === trade.instrumentId) {
-              return { ...h, quantity: h.quantity - trade.quantity };
-            }
-            return h;
-          })
-          .filter((h) => h.quantity > 0);
-      });
+      setHoldings((prev) =>
+        prev
+          .map((h) => (h.instrument_id === trade.instrumentId ? { ...h, quantity: h.quantity - trade.quantity } : h))
+          .filter((h) => h.quantity > 0)
+      );
     }
 
     // Add to transaction history
@@ -244,109 +463,298 @@ export default function App() {
     };
     setTransactions((prev) => [newTx, ...prev]);
 
-    // Award XP and check first trade achievement
-    setUser((prev) => ({ ...prev, xp_points: (prev.xp_points || 840) + 50 }));
+    // Award XP and sync to Supabase
+    try {
+      const xpRes = await authService.updateUserXpAndStreak(user.user_id, 50);
+      setUser((prev) => ({
+        ...prev,
+        xp_points: xpRes.xp_points,
+        current_streak: xpRes.current_streak,
+        longest_streak: xpRes.longest_streak
+      }));
+    } catch (err) {
+      console.warn('XP sync error:', err);
+    }
   };
 
   // Reset Paper Trading Portfolio
   const handleResetPaperPortfolio = () => {
-    setDemoAccount({
+    const freshAccount: DemoAccount = {
       demo_account_id: 1,
       user_id: user.user_id,
       virtual_balance: 1000000.00,
       currency: 'INR',
       initial_capital: 1000000.00
-    });
+    };
+    setDemoAccount(freshAccount);
     setHoldings([]);
     setTransactions([]);
+    if (user.email) {
+      authService.saveUserData(user.email, {
+        user,
+        demoAccount: freshAccount,
+        holdings: [],
+        transactions: [],
+        goals,
+        notifications,
+        quizAttempts,
+        mockExamAttempts
+      });
+    }
   };
 
   // Goal handlers
-  const handleAddGoal = (newGoal: Omit<Goal, 'goal_id'>) => {
+  const handleAddGoal = async (newGoal: Omit<Goal, 'goal_id'>) => {
+    await goalService.createGoal(String(user.user_id), newGoal.goal_title, newGoal.target_date, newGoal.category);
     const created: Goal = {
       ...newGoal,
       goal_id: Date.now()
     };
-    setGoals((prev) => [created, ...prev]);
+    const updatedGoals = [created, ...goals];
+    setGoals(updatedGoals);
+    if (user.email) {
+      authService.saveUserData(user.email, {
+        user,
+        demoAccount,
+        holdings,
+        transactions,
+        goals: updatedGoals,
+        notifications,
+        quizAttempts,
+        mockExamAttempts
+      });
+    }
   };
 
   const handleToggleGoalStatus = (goalId: number) => {
-    setGoals((prev) =>
-      prev.map((g) => {
-        if (g.goal_id === goalId) {
-          const isComp = g.status === 'COMPLETED';
-          return {
-            ...g,
-            status: isComp ? 'IN_PROGRESS' : 'COMPLETED',
-            current_progress_percent: isComp ? 40 : 100
-          };
-        }
-        return g;
-      })
-    );
+    const updatedGoals = goals.map((g) => {
+      if (g.goal_id === goalId) {
+        const isComp = g.status === 'COMPLETED';
+        return {
+          ...g,
+          status: isComp ? 'IN_PROGRESS' : 'COMPLETED',
+          current_progress_percent: isComp ? 40 : 100
+        } as Goal;
+      }
+      return g;
+    });
+    setGoals(updatedGoals);
+    if (user.email) {
+      authService.saveUserData(user.email, {
+        user,
+        demoAccount,
+        holdings,
+        transactions,
+        goals: updatedGoals,
+        notifications,
+        quizAttempts,
+        mockExamAttempts
+      });
+    }
   };
 
   // Notifications handlers
   const handleMarkAllNotificationsAsRead = () => {
+    notifications.forEach(n => notificationService.markAsRead(String(n.notification_id)));
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
   const handleToggleNotificationRead = (id: number) => {
+    notificationService.markAsRead(String(id));
     setNotifications((prev) =>
       prev.map((n) => (n.notification_id === id ? { ...n, read: !n.read } : n))
     );
   };
 
   // Auth / Switch Demo Account
-  const handleAuthSuccess = (userData: { email: string; name: string; isNewUser?: boolean }) => {
-    setUser((prev) => ({
-      ...prev,
-      email: userData.email,
-      full_name: userData.name
-    }));
+  const handleAuthSuccess = (userData: { email: string; name: string; isNewUser?: boolean; isDemoUser?: boolean; role?: any }) => {
     setIsAuthenticated(true);
     setIsAuthModalOpen(false);
 
-    if (userData.isNewUser) {
-      setIsOnboarding(true);
-    } else {
-      handleNavigate('dashboard');
+    if (userData.isDemoUser) {
+      const demoRole = userData.role || (userData.email.includes('admin') ? 'ADMIN' : 'USER');
+      setUser({ ...MOCK_CURRENT_USER, role: demoRole });
+      setDemoAccount(MOCK_DEMO_ACCOUNT);
+      setHoldings(MOCK_DEMO_HOLDINGS);
+      setTransactions(MOCK_DEMO_TRANSACTIONS);
+      setGoals(MOCK_GOALS);
+      setQuizAttempts(MOCK_QUIZ_ATTEMPTS);
+      setMockExamAttempts(MOCK_EXAM_ATTEMPTS);
+      setNotifications(MOCK_NOTIFICATIONS);
+      if (demoRole === 'ADMIN') {
+        handleNavigate('admin');
+      } else {
+        handleNavigate('dashboard');
+      }
+      return;
     }
+
+    const saved = authService.loadUserData(userData.email);
+    if (saved && !userData.isNewUser) {
+      const userWithRole = { ...saved.user, role: saved.user.role || (userData.email.includes('admin') ? 'ADMIN' : 'USER') };
+      setUser(userWithRole);
+      setDemoAccount(saved.demoAccount || INITIAL_FRESH_DEMO_ACCOUNT);
+      setHoldings(saved.holdings || []);
+      setTransactions(saved.transactions || []);
+      setGoals(saved.goals || []);
+      setNotifications(saved.notifications || INITIAL_FRESH_NOTIFICATIONS);
+      setQuizAttempts(saved.quizAttempts || []);
+      setMockExamAttempts(saved.mockExamAttempts || []);
+      if (userWithRole.role === 'ADMIN') {
+        handleNavigate('admin');
+      } else {
+        handleNavigate('dashboard');
+      }
+    } else {
+      const assignedRole = userData.role || (userData.email.includes('admin') ? 'ADMIN' : 'USER');
+      const freshUser: User = {
+        user_id: Date.now(),
+        email: userData.email,
+        full_name: userData.name || userData.email.split('@')[0],
+        phone_number: '',
+        account_status: 'ACTIVE',
+        role: assignedRole,
+        knowledge_level_id: 1,
+        current_streak: 0,
+        longest_streak: 0,
+        xp_points: 0,
+        social_links: []
+      };
+      const freshAccount: DemoAccount = {
+        demo_account_id: 1,
+        user_id: freshUser.user_id,
+        virtual_balance: 1000000.00,
+        currency: 'INR',
+        initial_capital: 1000000.00
+      };
+      setUser(freshUser);
+      setDemoAccount(freshAccount);
+      setHoldings([]);
+      setTransactions([]);
+      setGoals([]);
+      setQuizAttempts([]);
+      setMockExamAttempts([]);
+      setNotifications(INITIAL_FRESH_NOTIFICATIONS);
+      setLessons((prev) => prev.map((l) => ({ ...l, is_completed: false })));
+      setActiveLesson({ ...MOCK_LESSONS[0], is_completed: false });
+
+      authService.saveUserData(userData.email, {
+        user: freshUser,
+        demoAccount: freshAccount,
+        holdings: [],
+        transactions: [],
+        goals: [],
+        notifications: INITIAL_FRESH_NOTIFICATIONS,
+        quizAttempts: [],
+        mockExamAttempts: []
+      });
+
+      if (userData.isNewUser) {
+        setIsOnboarding(true);
+      } else if (assignedRole === 'ADMIN') {
+        handleNavigate('admin');
+      } else {
+        handleNavigate('dashboard');
+      }
+    }
+  };
+
+  // Sign Out Handler (Clear session, reset user, return to landing)
+  const handleSignOut = async () => {
+    try {
+      await authService.signOut();
+    } catch (err) {
+      console.warn('Sign out error:', err);
+    }
+    setIsAuthenticated(false);
+    setUser(INITIAL_FRESH_USER);
+    setDemoAccount(INITIAL_FRESH_DEMO_ACCOUNT);
+    setHoldings([]);
+    setTransactions([]);
+    setGoals([]);
+    setQuizAttempts([]);
+    setMockExamAttempts([]);
+    setNotifications(INITIAL_FRESH_NOTIFICATIONS);
+    setCurrentView('landing');
   };
 
   // Onboarding completion
   const handleOnboardingComplete = (prefs: UserPreferences) => {
     setIsOnboarding(false);
-    setUser((prev) => ({
-      ...prev,
-      knowledge_level_id: prefs.knowledgeLevel === 'Novice Saver' ? 1 : prefs.knowledgeLevel === 'Market Explorer' ? 2 : 3
-    }));
+    setUser((prev) => {
+      const updated = {
+        ...prev,
+        knowledge_level_id: prefs.knowledgeLevel === 'Novice Saver' ? 1 : prefs.knowledgeLevel === 'Market Explorer' ? 2 : 3
+      };
+      if (prev.email) {
+        const saved = authService.loadUserData(prev.email);
+        if (saved) authService.saveUserData(prev.email, { ...saved, user: updated });
+      }
+      return updated;
+    });
     handleNavigate('dashboard');
   };
 
   // Quiz completion
-  const handleQuizComplete = (score: number, totalQuestions: number, correctCount: number) => {
+  const handleQuizComplete = async (score: number, totalQuestions: number, correctCount: number) => {
     setQuizScoreResult({ score, totalQuestions, correctCount });
+    let newAttempts = [...quizAttempts];
     if (activeQuiz) {
-      setQuizAttempts((prev) => [
-        {
-          attempt_id: Date.now(),
-          user_id: user.user_id,
-          quiz_id: activeQuiz.quiz_id,
-          score,
-          completed_at: new Date().toISOString().substring(0, 10),
-          total_questions: totalQuestions,
-          correct_answers: correctCount
-        },
-        ...prev
-      ]);
+      const attempt = await quizService.submitQuizAttempt(
+        String(user.user_id),
+        String(activeQuiz.quiz_id),
+        score,
+        totalQuestions * 20,
+        correctCount,
+        totalQuestions,
+        180
+      );
+      if (attempt) {
+        newAttempts = [attempt, ...quizAttempts];
+      } else {
+        newAttempts = [
+          {
+            attempt_id: Date.now(),
+            user_id: user.user_id,
+            quiz_id: activeQuiz.quiz_id,
+            score,
+            completed_at: new Date().toISOString().substring(0, 10),
+            total_questions: totalQuestions,
+            correct_answers: correctCount
+          },
+          ...quizAttempts
+        ];
+      }
+      setQuizAttempts(newAttempts);
+
+      // Phase 28: Update Spaced Review Schedule & Longitudinal Mastery Log
+      const topicId = activeQuiz.topic_id || 1;
+      const pctScore = Math.round((correctCount / (totalQuestions || 1)) * 100);
+      spacedReviewService.recordReviewOutcome(String(user.user_id), topicId, pctScore, pctScore >= 75);
+      learningLoopService.recordMasteryObservation(
+        String(user.user_id),
+        topicId,
+        'QUIZ_ATTEMPT',
+        pctScore,
+        `Completed Quiz #${activeQuiz.quiz_id} (${correctCount}/${totalQuestions} correct, ${pctScore}%)`
+      );
     }
-    // Add XP
-    setUser((prev) => ({ ...prev, xp_points: (prev.xp_points || 840) + 100 }));
+    // Add XP & Increment Streak in Database
+    try {
+      const xpRes = await authService.updateUserXpAndStreak(user.user_id, 100);
+      setUser((prev) => ({
+        ...prev,
+        xp_points: xpRes.xp_points,
+        current_streak: xpRes.current_streak,
+        longest_streak: xpRes.longest_streak
+      }));
+    } catch (err) {
+      console.warn('Quiz XP sync error:', err);
+    }
   };
 
   // Mock Exam completion
-  const handleMockExamComplete = (stats: {
+  const handleMockExamComplete = async (stats: {
     score: number;
     totalMarks: number;
     passed: boolean;
@@ -354,30 +762,105 @@ export default function App() {
     wrongCount: number;
     unansweredCount: number;
     timeSpentMins: number;
+    topicBreakdown?: any[];
+    isInvalidated?: boolean;
   }) => {
     setMockExamStatsResult(stats);
+    let newAttempts = [...mockExamAttempts];
     if (activeMockExam) {
-      setMockExamAttempts((prev) => [
-        {
-          attempt_id: Date.now(),
-          user_id: user.user_id,
-          exam_id: activeMockExam.exam_id,
-          score: stats.score,
-          passed: stats.passed ? 'YES' : 'NO',
-          completed_at: new Date().toISOString().substring(0, 10),
-          time_spent_mins: stats.timeSpentMins,
-          accuracy_percent: parseFloat(((stats.correctCount / (stats.correctCount + stats.wrongCount || 1)) * 100).toFixed(1))
-        },
-        ...prev
-      ]);
+      const accuracy = parseFloat(((stats.correctCount / (stats.correctCount + stats.wrongCount || 1)) * 100).toFixed(1));
+      const attempt = await examService.submitExamAttempt(
+        String(user.user_id),
+        String(activeMockExam.exam_id),
+        stats.score,
+        activeMockExam.total_marks || 100,
+        accuracy,
+        stats.passed,
+        stats.timeSpentMins * 60,
+        stats.isInvalidated ? 4 : 0,
+        stats.topicBreakdown
+      );
+      if (attempt) {
+        newAttempts = [attempt, ...mockExamAttempts];
+      } else {
+        newAttempts = [
+          {
+            attempt_id: Date.now(),
+            user_id: user.user_id,
+            exam_id: activeMockExam.exam_id,
+            score: stats.score,
+            passed: stats.passed ? 'YES' : 'NO',
+            completed_at: new Date().toISOString().substring(0, 10),
+            time_spent_mins: stats.timeSpentMins,
+            accuracy_percent: accuracy,
+            topic_breakdown: stats.topicBreakdown ? { list: stats.topicBreakdown } : undefined
+          },
+          ...mockExamAttempts
+        ];
+      }
+      setMockExamAttempts(newAttempts);
     }
-    // Add XP
-    setUser((prev) => ({ ...prev, xp_points: (prev.xp_points || 840) + 250 }));
+    // Add XP & Increment Streak in Database
+    const xpBonus = stats.passed ? 350 : 120;
+    try {
+      const xpRes = await authService.updateUserXpAndStreak(user.user_id, xpBonus);
+      setUser((prev) => ({
+        ...prev,
+        xp_points: xpRes.xp_points,
+        current_streak: xpRes.current_streak,
+        longest_streak: xpRes.longest_streak
+      }));
+    } catch (err) {
+      console.warn('Exam XP sync error:', err);
+    }
   };
 
-  // Current lesson content and resources
-  const activeContent = MOCK_LESSON_CONTENTS.find((c) => c.lesson_id === activeLesson.lesson_id) || MOCK_LESSON_CONTENTS[0];
+  // Current lesson content and resources with language awareness
+  const currentLang = typeof window !== 'undefined' ? localStorage.getItem('financex_language') || 'en' : 'en';
+  let baseContent = MOCK_LESSON_CONTENTS.find((c) => c.lesson_id === activeLesson.lesson_id);
+  if (!baseContent && activeLesson.lesson_id > 100 && activeLesson.lesson_id <= 115) {
+    const chNum = activeLesson.lesson_id - 100;
+    const nismCh = NISM_XV_CHAPTERS.find(c => c.chapterNumber === chNum);
+    if (nismCh) {
+      baseContent = {
+        content_id: 200 + chNum,
+        lesson_id: activeLesson.lesson_id,
+        content_type: 'MARKDOWN_TEXT',
+        content_url: '',
+        raw_body: nismCh.detailedBody,
+        key_takeaways: nismCh.keyTakeaways,
+        formulas: nismCh.formulas.map(f => ({
+          label: f.label,
+          formula: f.formula,
+          explanation: f.explanation
+        }))
+      };
+    }
+  }
+  if (!baseContent) {
+    baseContent = MOCK_LESSON_CONTENTS[0];
+  }
+
+  const taContent = TAMIL_LESSON_CONTENTS[activeLesson.lesson_id];
+  const activeContent = (currentLang === 'ta' && taContent)
+    ? { ...baseContent, raw_body: taContent.raw_body, key_takeaways: taContent.key_takeaways }
+    : baseContent;
+
+  const taLesson = TAMIL_LESSONS[activeLesson.lesson_id];
+  const displayLesson = (currentLang === 'ta' && taLesson)
+    ? { ...activeLesson, title: taLesson.title }
+    : activeLesson;
+
   const activeResources = MOCK_LESSON_RESOURCES.filter((r) => r.lesson_id === activeLesson.lesson_id);
+  if (activeResources.length === 0 && (activeLesson.course_id === 3 || activeLesson.lesson_id > 100)) {
+    activeResources.push({
+      resource_id: 999,
+      lesson_id: activeLesson.lesson_id,
+      resource_title: 'NISM-Series-XV Research Analyst Official Workbook (Feb 2026)',
+      resource_url: '/assets/nism-series-xv-workbook-feb-2026.pdf',
+      resource_type: 'PDF_CHEAT_SHEET'
+    });
+  }
   const currentKnowledgeLevel = MOCK_KNOWLEDGE_LEVELS.find((k) => k.level_id === user.knowledge_level_id) || MOCK_KNOWLEDGE_LEVELS[2];
 
   // Render Boot Experience on initial load
@@ -392,17 +875,33 @@ export default function App() {
 
   // Render Active Main View
   const renderCurrentView = () => {
+    // Phase 27: Compute live deterministic concept mastery & adaptive recommendations
+    const conceptMastery = learningLoopService.computeConceptMastery(user.user_id, {
+      quizAttempts,
+      mockAttempts: mockExamAttempts,
+      allLessons: lessons,
+      allTopics: MOCK_TOPICS
+    });
+
+    const adaptiveRecommendations = learningLoopService.generateAdaptiveRecommendations(
+      user.user_id,
+      conceptMastery,
+      mockExamAttempts,
+      goals
+    );
+
     switch (currentView) {
       case 'dashboard':
         return (
           <DashboardView
             user={user}
             onNavigate={handleNavigate}
-            recommendations={MOCK_AI_RECOMMENDATIONS}
+            recommendations={adaptiveRecommendations}
             goals={goals}
             courses={courses}
-            activeLesson={activeLesson}
+            activeLesson={displayLesson}
             demoAccount={demoAccount}
+            conceptMastery={conceptMastery}
           />
         );
 
@@ -425,15 +924,37 @@ export default function App() {
       case 'learn':
         return (
           <LessonView
-            lesson={activeLesson}
+            lesson={displayLesson}
             course={activeCourse}
             allLessons={lessons.filter((l) => l.course_id === activeCourse.course_id)}
             content={activeContent}
             resources={activeResources}
             onSelectLesson={(l) => setActiveLesson(l)}
             onNavigate={handleNavigate}
+            onToggleComplete={(lessonId, completed) => {
+              setLessons((prev) =>
+                prev.map((les) =>
+                  les.lesson_id === lessonId ? { ...les, is_completed: completed } : les
+                )
+              );
+              if (completed) {
+                authService.updateUserXpAndStreak(user.user_id, 50).then((xpRes) => {
+                  setUser((prev) => ({
+                    ...prev,
+                    xp_points: xpRes.xp_points,
+                    current_streak: xpRes.current_streak,
+                    longest_streak: xpRes.longest_streak
+                  }));
+                }).catch(() => {});
+              }
+              courseService.recordLessonProgress(String(user.user_id), String(lessonId), completed ? 100 : 0, completed);
+            }}
             onOpenAIWithContext={(topic) => {
-              setAiTutorPrompt(`Please explain key concepts and numerical examples for: ${topic}`);
+              setAiTutorPrompt(
+                currentLang === 'ta'
+                  ? `தயவுசெய்து இந்த தலைப்பிற்கான முக்கிய கருத்துகள் மற்றும் கணித உதாரணங்களை விளக்கவும்: ${topic}`
+                  : `Please explain key concepts and numerical examples for: ${topic}`
+              );
               handleNavigate('ai-tutor');
             }}
           />
@@ -448,20 +969,20 @@ export default function App() {
               totalQuestions={quizScoreResult.totalQuestions}
               correctCount={quizScoreResult.correctCount}
               onRetry={() => setQuizScoreResult(null)}
-              onNavigate={(v) => {
+              onNavigate={(v, payload) => {
                 setQuizScoreResult(null);
                 setActiveQuiz(null);
-                handleNavigate(v);
+                handleNavigate(v, payload);
               }}
             />
           );
         }
         if (activeQuiz) {
-          const quizQuestions = MOCK_QUESTIONS.filter((q) => q.topic_id === activeQuiz.topic_id);
+          const quizQuestions = questions.filter((q) => q.topic_id === activeQuiz.topic_id);
           return (
             <QuizRunner
               quiz={activeQuiz}
-              questions={quizQuestions.length > 0 ? quizQuestions : MOCK_QUESTIONS.slice(0, 5)}
+              questions={quizQuestions.length > 0 ? quizQuestions : questions.slice(0, 5)}
               onComplete={handleQuizComplete}
               onOpenAIWithQuestion={(qText) => {
                 setAiTutorPrompt(`Help me understand why the correct answer is chosen for this question:\n"${qText}"`);
@@ -494,10 +1015,10 @@ export default function App() {
               exam={activeMockExam}
               stats={mockExamStatsResult}
               onRetry={() => setMockExamStatsResult(null)}
-              onNavigate={(v) => {
+              onNavigate={(v, payload) => {
                 setMockExamStatsResult(null);
                 setActiveMockExam(null);
-                handleNavigate(v);
+                handleNavigate(v, payload);
               }}
             />
           );
@@ -506,7 +1027,7 @@ export default function App() {
           return (
             <MockExamRunner
               exam={activeMockExam}
-              questions={MOCK_QUESTIONS}
+              questions={questions}
               onComplete={handleMockExamComplete}
               onNavigate={(v) => {
                 setActiveMockExam(null);
@@ -535,6 +1056,7 @@ export default function App() {
             instruments={instruments}
             holdings={holdings}
             transactions={transactions}
+            userId={String(user.user_id)}
             onExecuteTrade={handleExecuteTrade}
             onNavigate={handleNavigate}
           />
@@ -551,8 +1073,11 @@ export default function App() {
       case 'certifications':
         return (
           <CertificationsView
-            certifications={MOCK_CERTIFICATIONS}
+            certifications={certificationsList}
             onNavigate={handleNavigate}
+            userName={user.full_name}
+            conceptMastery={conceptMastery}
+            mockAttempts={mockExamAttempts}
           />
         );
 
@@ -560,6 +1085,7 @@ export default function App() {
         return (
           <StudyPlansView
             studyPlans={MOCK_STUDY_PLANS}
+            currentUser={user}
             onNavigate={handleNavigate}
           />
         );
@@ -569,6 +1095,7 @@ export default function App() {
           <CommunityView
             threads={MOCK_DISCUSSION_THREADS}
             replies={MOCK_DISCUSSION_REPLIES}
+            currentUser={user}
             onNavigate={handleNavigate}
           />
         );
@@ -606,11 +1133,19 @@ export default function App() {
         return (
           <ProfileView
             user={user}
-            certificates={MOCK_CERTIFICATES}
-            certifications={MOCK_CERTIFICATIONS}
+            certificates={userCertificates}
+            certifications={certificationsList}
             socialLinks={MOCK_USER_SOCIAL_LINKS}
             knowledgeLevel={currentKnowledgeLevel}
             onNavigate={handleNavigate}
+            onUpdateUser={async (updated) => {
+              const res = await authService.updateProfile(user.user_id, updated);
+              if (res.user) {
+                setUser(res.user);
+              } else {
+                setUser((prev) => ({ ...prev, ...updated }));
+              }
+            }}
           />
         );
 
@@ -643,9 +1178,67 @@ export default function App() {
         );
 
       case 'figma-blueprint':
+        if (!adminService.hasAdminPrivileges(user)) {
+          return (
+            <DashboardView
+              user={user}
+              onNavigate={handleNavigate}
+              recommendations={adaptiveRecommendations}
+              goals={goals}
+              courses={courses}
+              activeLesson={displayLesson}
+              demoAccount={demoAccount}
+              conceptMastery={conceptMastery}
+            />
+          );
+        }
         return (
           <FigmaBlueprintView
             onNavigate={handleNavigate}
+          />
+        );
+
+      case 'calculators':
+        return (
+          <FinancialCalculatorsView
+            onNavigate={handleNavigate}
+          />
+        );
+
+      case 'arena':
+        return (
+          <CompetitiveArenaView
+            currentUser={user}
+            onNavigate={handleNavigate}
+          />
+        );
+
+      case 'admin':
+        return (
+          <AdminPortalView
+            currentUser={user}
+            courses={courses}
+            topics={MOCK_TOPICS}
+            lessons={lessons}
+            lessonContents={lessonContents}
+            lessonResources={lessonResources}
+            quizzes={quizzes}
+            questions={questions}
+            mockExams={mockExams}
+            certifications={certificationsList}
+            achievements={achievements}
+            learners={adminLearners.length > 0 ? adminLearners : [user]}
+            onNavigate={handleNavigate}
+            onUpdateLearners={setAdminLearners}
+            onUpdateCourses={setCourses}
+            onUpdateLessons={setLessons}
+            onUpdateLessonContents={setLessonContents}
+            onUpdateLessonResources={setLessonResources}
+            onUpdateQuestions={setQuestions}
+            onUpdateQuizzes={setQuizzes}
+            onUpdateMockExams={setMockExams}
+            onUpdateCertifications={setCertificationsList}
+            onUpdateAchievements={setAchievementsList}
           />
         );
 
@@ -657,7 +1250,7 @@ export default function App() {
             recommendations={MOCK_AI_RECOMMENDATIONS}
             goals={goals}
             courses={courses}
-            activeLesson={activeLesson}
+            activeLesson={displayLesson}
             demoAccount={demoAccount}
           />
         );
@@ -666,14 +1259,6 @@ export default function App() {
 
   return (
     <>
-      {/* 9-Chapter Evolution of Money Story Modal */}
-      {isMoneyEvolutionOpen && (
-        <MoneyEvolutionJourney
-          onComplete={() => setIsMoneyEvolutionOpen(false)}
-          onSkip={() => setIsMoneyEvolutionOpen(false)}
-        />
-      )}
-
       {/* Switch Demo Account / Authentication Modal */}
       <AuthModal
         key={authModalMode}
@@ -690,6 +1275,7 @@ export default function App() {
           user={user}
           onOpenSignIn={handleOpenSignIn}
           onOpenSignUp={handleOpenSignUp}
+          onOpenAdminSignIn={handleOpenAdminSignIn}
           onEnterApp={() => handleNavigate('dashboard')}
           onNavigateCourse={(courseId) => {
             const found = courses.find((c) => c.course_id === courseId);
@@ -701,6 +1287,64 @@ export default function App() {
             }
           }}
         />
+      ) : currentView === 'admin' ? (
+        /* Full Institutional Admin LMS / CMS Experience (Guarded) */
+        adminService.hasAdminPrivileges(user) ? (
+          <AdminPortalView
+            currentUser={user}
+            courses={courses}
+            topics={MOCK_TOPICS}
+            lessons={lessons}
+            lessonContents={lessonContents}
+            lessonResources={lessonResources}
+            quizzes={quizzes}
+            questions={questions}
+            mockExams={mockExams}
+            certifications={certificationsList}
+            achievements={achievements}
+            learners={adminLearners.length > 0 ? adminLearners : [user]}
+            onNavigate={handleNavigate}
+            onUpdateLearners={setAdminLearners}
+            onUpdateCourses={setCourses}
+            onUpdateLessons={setLessons}
+            onUpdateLessonContents={setLessonContents}
+            onUpdateLessonResources={setLessonResources}
+            onUpdateQuestions={setQuestions}
+            onUpdateQuizzes={setQuizzes}
+            onUpdateMockExams={setMockExams}
+            onUpdateCertifications={setCertificationsList}
+            onUpdateAchievements={setAchievementsList}
+          />
+        ) : (
+          <AppShell
+            currentView="dashboard"
+            onNavigate={handleNavigate}
+            user={user}
+            notifications={notifications}
+            virtualBalance={demoAccount.virtual_balance}
+            holdingsCount={holdings.length}
+            onOpenAuth={handleOpenSignIn}
+            onSignOut={handleSignOut}
+          >
+            <div className="p-8 max-w-xl mx-auto text-center space-y-4 rounded-3xl bg-white dark:bg-[#0B0F19] border border-rose-200 dark:border-rose-900/40 shadow-xl my-12">
+              <div className="w-14 h-14 rounded-2xl bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
+                <ShieldAlert className="w-7 h-7" />
+              </div>
+              <h2 className="text-xl font-display font-black text-slate-900 dark:text-white">
+                Administrative Access Required
+              </h2>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                Your account ({user.email}) does not have administrative permissions to access the LMS & CMS Management Portal.
+              </p>
+              <button
+                onClick={() => handleNavigate('dashboard')}
+                className="px-5 py-2.5 rounded-xl bg-[#FF2E7E] text-white font-bold text-xs shadow-md cursor-pointer"
+              >
+                Return to Learner Dashboard
+              </button>
+            </div>
+          </AppShell>
+        )
       ) : (
         /* Main Authenticated Application Shell */
         <AppShell
@@ -708,8 +1352,10 @@ export default function App() {
           onNavigate={handleNavigate}
           user={user}
           notifications={notifications}
+          virtualBalance={demoAccount.virtual_balance}
+          holdingsCount={holdings.length}
           onOpenAuth={handleOpenSignIn}
-          onOpenMoneyEvolution={() => setIsMoneyEvolutionOpen(true)}
+          onSignOut={handleSignOut}
         >
           {renderCurrentView()}
         </AppShell>

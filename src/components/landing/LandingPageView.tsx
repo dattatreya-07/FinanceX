@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Bot, 
@@ -31,33 +31,67 @@ interface LandingPageViewProps {
   user?: User;
   onOpenSignIn: () => void;
   onOpenSignUp: () => void;
+  onOpenAdminSignIn?: () => void;
   onEnterApp: () => void;
   onNavigateCourse?: (courseId: number) => void;
 }
+
+const CHAPTER_TITLES: Record<number, string> = {
+  1: 'Money Moves Everything',
+  2: 'Markets in Motion',
+  3: 'Derivatives & Options',
+  4: 'Quantitative Algorithms',
+  5: 'The 1% Mindset',
+  6: 'Wealth & Risk Architecture',
+  7: 'Master Your Mind'
+};
 
 export const LandingPageView: React.FC<LandingPageViewProps> = ({
   isAuthenticated,
   user,
   onOpenSignIn,
   onOpenSignUp,
+  onOpenAdminSignIn,
   onEnterApp,
   onNavigateCourse
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeLeaderboardTab, setActiveLeaderboardTab] = useState<'week' | 'month'>('week');
   const [sliderValue, setSliderValue] = useState(125693);
+  const [storyProgress, setStoryProgress] = useState(0);
+  const [activeChapter, setActiveChapter] = useState(1);
+  const [isPastStory, setIsPastStory] = useState(false);
+  const [tickerItems, setTickerItems] = useState<Array<{ symbol: string; price: string; change: string; up: boolean; freshness: string }>>([
+    { symbol: 'NIFTY 50', price: '24,812.40', change: '+0.84%', up: true, freshness: 'DELAYED' },
+    { symbol: 'SENSEX', price: '81,332.10', change: '+0.62%', up: true, freshness: 'DELAYED' },
+    { symbol: 'BANK NIFTY', price: '52,140.85', change: '+1.02%', up: true, freshness: 'DELAYED' },
+    { symbol: 'USD/INR', price: '₹83.62', change: '-0.14%', up: false, freshness: 'LIVE' },
+    { symbol: 'GOLD (10g)', price: '₹72,450.00', change: '+0.38%', up: true, freshness: 'DELAYED' },
+    { symbol: 'NASDAQ 100', price: '$17,940.20', change: '+0.71%', up: true, freshness: 'DELAYED' },
+    { symbol: 'BTC/USD', price: '$64,280.00', change: '+2.45%', up: true, freshness: 'LIVE' },
+    { symbol: 'CRUDE OIL', price: '$76.20', change: '-0.80%', up: false, freshness: 'DELAYED' },
+  ]);
 
-  const marketTickerItems = [
-    { symbol: 'NIFTY 50', price: '24,812.40', change: '+0.84%', up: true },
-    { symbol: 'SENSEX', price: '81,332.10', change: '+0.62%', up: true },
-    { symbol: 'BANK NIFTY', price: '52,140.85', change: '+1.02%', up: true },
-    { symbol: 'USD/INR', price: '₹83.62', change: '-0.14%', up: false },
-    { symbol: 'GOLD (10g)', price: '₹72,450', change: '+0.38%', up: true },
-    { symbol: 'NASDAQ 100', price: '17,940.20', change: '+0.71%', up: true },
-    { symbol: 'BTC/USD', price: '$64,280.00', change: '+2.45%', up: true },
-    { symbol: 'CRUDE OIL', price: '$76.20', change: '-0.80%', up: false },
-    { symbol: 'NISM VIII (F&O)', price: 'INDEX SIM', change: '+1.15%', up: true },
-  ];
+  useEffect(() => {
+    import('../../services/marketDataService').then(({ marketDataService }) => {
+      marketDataService.getTickerItems().then((items) => {
+        if (items && items.length > 0) setTickerItems(items);
+      });
+    });
+  }, []);
+
+  useEffect(() => {
+    const handleScrollCheck = () => {
+      const storyEl = document.getElementById('story');
+      if (!storyEl) return;
+      const rect = storyEl.getBoundingClientRect();
+      // When user has scrolled past the 680vh story section
+      setIsPastStory(rect.bottom <= 100);
+    };
+    window.addEventListener('scroll', handleScrollCheck, { passive: true });
+    handleScrollCheck();
+    return () => window.removeEventListener('scroll', handleScrollCheck);
+  }, []);
 
   const scrollToSection = (sectionId: string) => {
     setMobileMenuOpen(false);
@@ -67,83 +101,116 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
     }
   };
 
+  const handleOpenApp = () => {
+    if (isAuthenticated) {
+      onEnterApp();
+    } else {
+      onOpenSignIn();
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#F8F9FA] dark:bg-[#07090E] text-slate-900 dark:text-slate-100 selection:bg-[#FF2E7E] selection:text-white font-sans antialiased theme-transition">
-      {/* 1. FIXED TOP NAVBAR */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 dark:bg-[#07090E]/90 backdrop-blur-xl border-b border-slate-200/90 dark:border-slate-800/80 theme-transition shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
-          {/* Left: Brand Logo */}
+    <div className="min-h-screen bg-[#F8F9FA] dark:bg-[#07090E] text-slate-900 dark:text-slate-100 selection:bg-[#FF2E7E] selection:text-white font-sans antialiased theme-transition relative">
+      {/* 1. TOP DYNAMIC SCROLL COORDINATION PROGRESS LINE */}
+      <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-transparent pointer-events-none">
+        <div 
+          className="h-full bg-gradient-to-r from-[#FF2E7E] via-purple-500 to-[#00E599] transition-all duration-150 ease-out shadow-[0_0_12px_rgba(0,229,153,0.8)]"
+          style={{ width: `${Math.min(100, Math.round(storyProgress * 100))}%` }}
+        />
+      </div>
+
+      {/* 2. COMPLETELY TRANSPARENT FLOATING TOP HEADER (ZERO PARTITION WITH SCROLL CANVAS) */}
+      <header className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 pointer-events-none ${
+        isPastStory 
+          ? 'bg-white/85 dark:bg-[#07090E]/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-white/10 shadow-lg' 
+          : 'bg-transparent border-none'
+      }`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+          {/* Left: Brand Logo in Partially Transparent Pill */}
           <div 
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="cursor-pointer"
+            className="cursor-pointer pointer-events-auto flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/20 dark:bg-black/40 backdrop-blur-md border border-white/30 dark:border-white/15 shadow-xs transition hover:border-white/50"
           >
             <FinanceXLogo size="md" variant="full" animated={true} />
           </div>
 
-          {/* Center Navigation Links (Desktop) */}
-          <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600 dark:text-slate-300">
-            <button 
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="hover:text-[#FF2E7E] dark:hover:text-white transition-colors cursor-pointer"
-            >
-              The Story
-            </button>
-            <button 
-              onClick={() => scrollToSection('demo')}
-              className="hover:text-[#FF2E7E] dark:hover:text-white transition-colors cursor-pointer"
-            >
-              Interactive Demo
-            </button>
-            <button 
-              onClick={() => scrollToSection('learn')}
-              className="hover:text-[#FF2E7E] dark:hover:text-white transition-colors cursor-pointer"
-            >
-              Curriculum
-            </button>
-            <button 
-              onClick={() => scrollToSection('how-it-works')}
-              className="hover:text-[#FF2E7E] dark:hover:text-white transition-colors cursor-pointer"
-            >
-              How It Works
-            </button>
-          </nav>
-
-          {/* Right Action Buttons */}
-          <div className="hidden md:flex items-center gap-3">
-            <ThemeToggle variant="compact" />
-
-            {isAuthenticated ? (
-              <button
-                onClick={onEnterApp}
-                className="px-5 py-2.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 dark:from-[#00E599] dark:to-[#00B377] text-white dark:text-slate-950 font-bold text-xs hover:brightness-110 shadow-sm dark:shadow-[0_0_20px_rgba(0,229,153,0.35)] transition-all duration-200 flex items-center gap-2 cursor-pointer"
+          {/* Center: Dynamic Scroll-Coordinated Narrative Capsule or Navigation */}
+          <div className="hidden md:flex items-center gap-6 pointer-events-auto">
+            {!isPastStory ? (
+              <div 
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/20 dark:bg-black/40 backdrop-blur-md border border-white/30 dark:border-white/15 text-xs font-mono text-slate-900 dark:text-white shadow-xs cursor-pointer hover:border-white/50 transition"
               >
-                <span>Open FinanceX</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-[#00E599] animate-pulse" />
+                <span className="font-bold text-[#FF2E7E] dark:text-[#00E599]">CH 0{activeChapter} / 07</span>
+                <span className="text-slate-400 dark:text-slate-500">•</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[220px]">
+                  {CHAPTER_TITLES[activeChapter] || 'The Story'}
+                </span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono ml-1">
+                  {Math.round(storyProgress * 100)}%
+                </span>
+              </div>
             ) : (
-              <>
-                <button
-                  onClick={onOpenSignIn}
-                  className="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white px-3 py-2 transition-colors cursor-pointer"
+              <nav className="flex items-center gap-8 text-sm font-semibold text-slate-600 dark:text-slate-300">
+                <button 
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                  className="hover:text-[#FF2E7E] dark:hover:text-white transition-colors cursor-pointer"
                 >
-                  Sign in
+                  The Story
                 </button>
-                <button
-                  onClick={onOpenSignUp}
-                  className="px-5 py-2.5 rounded-full bg-[#FF2E7E] hover:bg-[#E61E6D] text-white font-bold text-xs shadow-sm dark:shadow-[0_0_20px_rgba(255,46,126,0.4)] transition-all duration-200 cursor-pointer"
+                <button 
+                  onClick={() => scrollToSection('demo')}
+                  className="hover:text-[#FF2E7E] dark:hover:text-white transition-colors cursor-pointer"
                 >
-                  Get started
+                  Interactive Demo
                 </button>
-              </>
+                <button 
+                  onClick={() => scrollToSection('learn')}
+                  className="hover:text-[#FF2E7E] dark:hover:text-white transition-colors cursor-pointer"
+                >
+                  Curriculum
+                </button>
+                <button 
+                  onClick={() => scrollToSection('how-it-works')}
+                  className="hover:text-[#FF2E7E] dark:hover:text-white transition-colors cursor-pointer"
+                >
+                  How It Works
+                </button>
+              </nav>
             )}
           </div>
 
+          {/* Right Action Buttons */}
+          <div className="hidden md:flex items-center gap-3 pointer-events-auto">
+            <ThemeToggle variant="compact" />
+
+            {onOpenAdminSignIn && (
+              <button
+                onClick={onOpenAdminSignIn}
+                className="px-3.5 py-2 rounded-full bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-300/40 dark:border-purple-500/30 font-bold text-xs transition cursor-pointer flex items-center gap-1.5"
+                title="Institutional Administrator Access"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Admin</span>
+              </button>
+            )}
+
+            <button
+              onClick={handleOpenApp}
+              className="px-5 py-2.5 rounded-full bg-gradient-to-r from-[#FF2E7E] to-[#E61E6D] dark:from-[#00E599] dark:to-[#00B377] text-white dark:text-slate-950 font-bold text-xs hover:brightness-110 shadow-sm dark:shadow-[0_0_20px_rgba(0,229,153,0.35)] transition-all duration-200 flex items-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <span>Open FinanceX</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
           {/* Mobile Hamburger Toggle & Theme Toggle */}
-          <div className="flex md:hidden items-center gap-2">
+          <div className="flex md:hidden items-center gap-2 pointer-events-auto">
             <ThemeToggle variant="compact" />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+              className="p-2 rounded-xl bg-white/40 dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
               aria-label="Toggle menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -158,7 +225,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="md:hidden border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B0F19] px-4 py-6 space-y-4 shadow-xl"
+              className="md:hidden border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B0F19] px-4 py-6 space-y-4 shadow-xl pointer-events-auto"
             >
               <div className="flex flex-col space-y-3 text-sm font-semibold text-slate-700 dark:text-slate-300">
                 <button 
@@ -188,78 +255,74 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
               </div>
 
               <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2.5">
-                {isAuthenticated ? (
+                {onOpenAdminSignIn && (
                   <button
                     onClick={() => {
                       setMobileMenuOpen(false);
-                      onEnterApp();
+                      onOpenAdminSignIn();
                     }}
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 dark:from-[#00E599] dark:to-[#00B377] text-white dark:text-slate-950 font-bold text-xs text-center shadow-md"
+                    className="w-full py-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 font-bold text-xs text-center flex items-center justify-center gap-2"
                   >
-                    Open FinanceX Dashboard →
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>Admin Portal Sign In</span>
                   </button>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        onOpenSignIn();
-                      }}
-                      className="w-full py-2.5 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-300 hover:text-slate-900 font-semibold text-xs text-center"
-                    >
-                      Sign in
-                    </button>
-                    <button
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        onOpenSignUp();
-                      }}
-                      className="w-full py-3 rounded-xl bg-[#FF2E7E] text-white font-bold text-xs text-center shadow-md"
-                    >
-                      Get started
-                    </button>
-                  </>
                 )}
+
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleOpenApp();
+                  }}
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-[#FF2E7E] to-[#E61E6D] dark:from-[#00E599] dark:to-[#00B377] text-white dark:text-slate-950 font-bold text-xs text-center shadow-md flex items-center justify-center gap-2"
+                >
+                  <span>Open FinanceX</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* INFINITE MARKET TICKER */}
-        <div className="bg-slate-100/90 dark:bg-[#05070B] border-t border-b border-slate-200 dark:border-slate-800/80 py-2 overflow-hidden select-none theme-transition">
-          <div className="flex items-center gap-2 max-w-7xl mx-auto px-4 mb-0.5">
-            <span className="text-[10px] font-mono font-bold tracking-widest text-emerald-700 dark:text-[#00E599] flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-[#00E599] animate-pulse" />
-              LIVE SIMULATED MARKET TICKER
-            </span>
-            <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">• REAL-TIME CAPITAL MARKETS</span>
-          </div>
-
-          <div className="relative w-full overflow-hidden whitespace-nowrap">
-            <div className="inline-flex gap-8 animate-marquee">
-              {[...marketTickerItems, ...marketTickerItems, ...marketTickerItems].map((item, idx) => (
-                <div key={idx} className="inline-flex items-center gap-2 text-xs font-mono">
-                  <span className="font-bold text-slate-800 dark:text-slate-300">{item.symbol}</span>
-                  <span className="text-slate-500 dark:text-slate-400">{item.price}</span>
-                  <span className={`font-bold flex items-center gap-0.5 ${item.up ? 'text-emerald-600 dark:text-[#00E599]' : 'text-rose-600 dark:text-[#FF2E7E]'}`}>
-                    {item.up ? '▲' : '▼'} {item.change}
-                  </span>
-                  <span className="text-slate-300 dark:text-slate-700 ml-4">|</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
       </header>
 
-      {/* 2. CONTINUOUS CINEMATIC STORY STAGE (CHAPTERS 1 TO 7) */}
+      {/* 3. CONTINUOUS FULL-BLEED CINEMATIC STORY STAGE (CHAPTERS 1 TO 7) */}
       <div id="story" className="relative w-full">
         <CinematicStoryStage
           isAuthenticated={isAuthenticated}
           onOpenSignUp={onOpenSignUp}
           onEnterApp={onEnterApp}
           onScrollToDemo={() => scrollToSection('demo')}
+          onProgressChange={(prog, ch) => {
+            setStoryProgress(prog);
+            setActiveChapter(ch);
+          }}
         />
+      </div>
+
+      {/* 4. SEAMLESS MARKET TICKER TRANSITION (Docks right below story stage) */}
+      <div className="relative z-20 bg-slate-100/90 dark:bg-[#05070B] border-t border-b border-slate-200 dark:border-slate-800/80 py-2.5 overflow-hidden select-none theme-transition">
+        <div className="flex items-center gap-2 max-w-7xl mx-auto px-4 mb-0.5">
+          <span className="text-[10px] font-mono font-bold tracking-widest text-emerald-700 dark:text-[#00E599] flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-[#00E599] animate-pulse" />
+            AUTHORITATIVE MARKET TICKER
+          </span>
+          <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">• LIVE / DELAYED FEEDS</span>
+        </div>
+
+        <div className="relative w-full overflow-hidden whitespace-nowrap">
+          <div className="inline-flex gap-8 animate-marquee">
+            {[...tickerItems, ...tickerItems, ...tickerItems].map((item, idx) => (
+              <div key={idx} className="inline-flex items-center gap-2 text-xs font-mono">
+                <span className="font-bold text-slate-800 dark:text-slate-300">{item.symbol}</span>
+                <span className="text-slate-500 dark:text-slate-400">{item.price}</span>
+                <span className={`font-bold flex items-center gap-0.5 ${item.up ? 'text-emerald-600 dark:text-[#00E599]' : 'text-rose-600 dark:text-[#FF2E7E]'}`}>
+                  {item.up ? '▲' : '▼'} {item.change}
+                </span>
+                <span className="text-[9px] px-1 rounded bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400">{item.freshness}</span>
+                <span className="text-slate-300 dark:text-slate-700 ml-4">|</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* 3. INTERACTIVE BENTO DASHBOARD DISPLAY */}
@@ -630,31 +693,13 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
               Learn finance. Understand markets. Build better decisions with FinanceX.
             </p>
             <div className="pt-2 flex flex-wrap justify-center gap-4">
-              {isAuthenticated ? (
-                <button
-                  onClick={onEnterApp}
-                  className="px-8 py-4 rounded-2xl bg-[#FF2E7E] hover:bg-[#E61E6D] text-white font-bold text-sm shadow-md dark:shadow-[0_0_25px_rgba(255,46,126,0.4)] transition flex items-center gap-2 cursor-pointer"
-                >
-                  <span>Open FinanceX Dashboard</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              ) : (
-                <>
-                  <button
-                    onClick={onOpenSignUp}
-                    className="px-8 py-4 rounded-2xl bg-[#FF2E7E] hover:bg-[#E61E6D] text-white font-bold text-sm shadow-md dark:shadow-[0_0_25px_rgba(255,46,126,0.4)] transition flex items-center gap-2 cursor-pointer"
-                  >
-                    <span>Get Started Free Today</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={onOpenSignIn}
-                    className="px-8 py-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-500 text-slate-700 dark:text-white font-bold text-sm transition flex items-center gap-2 cursor-pointer shadow-xs"
-                  >
-                    <span>Sign In</span>
-                  </button>
-                </>
-              )}
+              <button
+                onClick={handleOpenApp}
+                className="px-8 py-4 rounded-2xl bg-gradient-to-r from-[#FF2E7E] to-[#E61E6D] dark:from-[#00E599] dark:to-[#00B377] text-white dark:text-slate-950 font-bold text-sm shadow-md dark:shadow-[0_0_25px_rgba(0,229,153,0.35)] transition flex items-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <span>Open FinanceX</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </div>

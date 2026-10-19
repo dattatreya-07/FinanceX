@@ -81,12 +81,21 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
   const totalResults = matchingCourses.length + matchingLessons.length + matchingCertifications.length + matchingInstruments.length + matchingQuestions.length + matchingDiscussions.length;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 p-4 bg-black/50 dark:bg-slate-950/80 backdrop-blur-md" id="global-search-modal">
+    <div 
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+      className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 p-4 bg-black/60 dark:bg-slate-950/85 backdrop-blur-md cursor-pointer select-none" 
+      id="global-search-modal"
+    >
       <motion.div
+        onClick={(e) => e.stopPropagation()}
         initial={{ opacity: 0, scale: 0.96, y: -10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.96, y: -10 }}
-        className="relative w-full max-w-2xl bg-white dark:bg-[#0C101B] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh] theme-transition"
+        className="relative w-full max-w-2xl bg-white dark:bg-[#0C101B] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh] theme-transition cursor-default select-text"
       >
         {/* Search Input Header */}
         <div className="p-4 border-b border-slate-200 dark:border-slate-800/80 flex items-center gap-3 bg-slate-50/80 dark:bg-slate-900/60">
