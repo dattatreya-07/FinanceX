@@ -89,7 +89,7 @@ export const BootExperience: React.FC<BootExperienceProps> = ({ onComplete }) =>
           animate={{ opacity: 1 }}
           exit={{ opacity: 0, scale: 1.02 }}
           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="fixed inset-0 w-screen h-screen min-w-full min-h-full z-[999999] flex items-center justify-center bg-[#07090E] text-white select-none overflow-hidden m-0 p-0 top-0 left-0 right-0 bottom-0"
+          className="fixed inset-0 w-full h-full min-h-[100dvh] max-h-[100dvh] z-[999999] flex items-center justify-center bg-[#07090E] text-white select-none overflow-hidden m-0 p-0"
           id="financex-boot-experience"
         >
           {/* Ambient Dark Radial Glow Background */}
@@ -101,15 +101,16 @@ export const BootExperience: React.FC<BootExperienceProps> = ({ onComplete }) =>
           {/* Top-Right Skip Control */}
           <button
             onClick={dismiss}
-            className="absolute top-5 right-5 sm:top-8 sm:right-8 z-50 flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-900/80 hover:bg-slate-800 text-xs sm:text-sm font-mono text-slate-300 hover:text-white border border-slate-700/60 backdrop-blur-md transition-all cursor-pointer shadow-2xl active:scale-95"
+            className="absolute top-4 right-4 sm:top-8 sm:right-8 z-50 flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-slate-900/80 hover:bg-slate-800 text-xs sm:text-sm font-mono text-slate-300 hover:text-white border border-slate-700/60 backdrop-blur-md transition-all cursor-pointer shadow-2xl active:scale-95"
+            aria-label="Skip Boot Animation"
           >
             <span>Skip</span>
-            <ArrowRight className="w-4 h-4 text-[#00E599]" />
+            <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#00E599]" />
           </button>
 
-          {/* Video Boot Animation (Full Screen & Responsive) */}
+          {/* Video Boot Animation (Fully Responsive Across All Media Types) */}
           {phase === 'video' ? (
-            <div className="relative z-20 w-full h-full flex items-center justify-center overflow-hidden">
+            <div className="relative z-20 w-full h-full max-h-[100dvh] flex items-center justify-center overflow-hidden p-2 sm:p-6 md:p-8">
               <video
                 ref={videoRef}
                 src="/FinanceX_BootFinal.mp4"
@@ -120,7 +121,7 @@ export const BootExperience: React.FC<BootExperienceProps> = ({ onComplete }) =>
                 onError={() => {
                   dismiss();
                 }}
-                className="w-full h-full object-cover sm:object-contain filter drop-shadow-2xl"
+                className="max-w-full max-h-[92dvh] w-auto h-auto object-contain filter drop-shadow-[0_16px_40px_rgba(4,120,87,0.3)] rounded-2xl"
               />
             </div>
           ) : null}

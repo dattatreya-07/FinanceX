@@ -74,6 +74,7 @@ import { FigmaBlueprintView } from './components/blueprint/FigmaBlueprintView';
 import { FinancialCalculatorsView } from './components/tools/FinancialCalculatorsView';
 import { CompetitiveArenaView } from './components/arena/CompetitiveArenaView';
 import { AdminPortalView } from './components/admin/AdminPortalView';
+import { ArgusFinPortalView } from './components/external/ArgusFinPortalView';
 
 const INITIAL_FRESH_USER: User = {
   user_id: 'guest',
@@ -1209,6 +1210,13 @@ export default function App() {
         return (
           <CompetitiveArenaView
             currentUser={user}
+            onNavigate={handleNavigate}
+          />
+        );
+
+      case 'argus-fin':
+        return (
+          <ArgusFinPortalView
             onNavigate={handleNavigate}
           />
         );

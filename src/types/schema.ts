@@ -517,7 +517,8 @@ export type AppNavView =
   | 'calculators'
   | 'arena'
   | 'figma-blueprint'
-  | 'admin';
+  | 'admin'
+  | 'argus-fin';
 
 // Phase 27: Production Intelligence & Adaptive Learning Loop
 export type MasteryLevel = 'NOT_STARTED' | 'LEARNING' | 'NEEDS_PRACTICE' | 'PROFICIENT' | 'MASTERED';

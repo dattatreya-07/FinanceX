@@ -365,9 +365,11 @@ export const AITutorView: React.FC<AITutorViewProps> = ({
                     <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => speechService.speak(msg.text, msg.id)}
-                        className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                           speechStatus.isSpeaking && speechStatus.currentTextId === msg.id
-                            ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40 shadow-xs'
+                            ? speechStatus.isPaused
+                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40 shadow-xs'
+                              : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-[#00E599] border border-emerald-300 dark:border-emerald-500/40 shadow-xs'
                             : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
                         }`}
                         title={
@@ -379,17 +381,18 @@ export const AITutorView: React.FC<AITutorViewProps> = ({
                         {speechStatus.isSpeaking && speechStatus.currentTextId === msg.id ? (
                           speechStatus.isPaused ? (
                             <>
-                              <Play className="w-3.5 h-3.5 fill-current" />
+                              <Play className="w-3.5 h-3.5 fill-current text-amber-500" />
                               <span>Resume</span>
                             </>
                           ) : (
                             <>
                               <span className="flex items-end gap-0.5 h-3">
-                                <span className="w-0.5 bg-emerald-500 animate-[bounce_0.6s_ease-in-out_infinite] h-3" />
-                                <span className="w-0.5 bg-emerald-500 animate-[bounce_0.8s_ease-in-out_infinite_0.1s] h-2" />
-                                <span className="w-0.5 bg-emerald-500 animate-[bounce_0.5s_ease-in-out_infinite_0.2s] h-3.5" />
+                                <span className="w-0.5 bg-emerald-600 dark:bg-[#00E599] animate-[bounce_0.6s_ease-in-out_infinite] h-3" />
+                                <span className="w-0.5 bg-emerald-600 dark:bg-[#00E599] animate-[bounce_0.8s_ease-in-out_infinite_0.1s] h-2" />
+                                <span className="w-0.5 bg-emerald-600 dark:bg-[#00E599] animate-[bounce_0.5s_ease-in-out_infinite_0.2s] h-3.5" />
                               </span>
-                              <span>Reading Aloud</span>
+                              <Pause className="w-3 h-3 ml-0.5" />
+                              <span>Pause</span>
                             </>
                           )
                         ) : (
@@ -404,9 +407,10 @@ export const AITutorView: React.FC<AITutorViewProps> = ({
                         <button
                           onClick={() => speechService.stop()}
                           title="Stop Reading"
-                          className="p-1 rounded-lg hover:bg-red-100 dark:hover:bg-red-950 text-slate-400 hover:text-red-500 transition cursor-pointer"
+                          className="flex items-center gap-1 px-2 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/60 text-xs font-bold transition cursor-pointer"
                         >
-                          <Square className="w-3.5 h-3.5 fill-current" />
+                          <Square className="w-3 h-3 fill-current" />
+                          <span>Stop</span>
                         </button>
                       )}
                     </div>

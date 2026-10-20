@@ -9,6 +9,7 @@ interface LanguageSelectorProps {
 export const LanguageSelector: React.FC<LanguageSelectorProps> = ({ variant = 'header' }) => {
   const { i18n } = useTranslation();
   const [isOpen, setIsOpen] = React.useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
   const currentLang = i18n.language || 'en';
 
   const handleLanguageChange = (lang: string) => {
@@ -19,27 +20,41 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({ variant = 'h
     setIsOpen(false);
   };
 
+  // Close on outside click
+  React.useEffect(() => {
+    const handleOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [isOpen]);
+
   const languages = [
-    { code: 'en', label: 'English', flag: '🇬🇧', subtitle: 'English (US)' },
-    { code: 'ta', label: 'தமிழ்', flag: '🇮🇳', subtitle: 'Tamil' },
+    { code: 'en', label: 'English', short: 'EN', flag: '🇬🇧', subtitle: 'English (US)' },
+    { code: 'ta', label: 'தமிழ்', short: 'TA', flag: '🇮🇳', subtitle: 'Tamil' },
   ];
 
   const currentObj = languages.find(l => l.code === currentLang) || languages[0];
 
   return (
-    <div className="relative inline-block text-left" id="language-selector">
+    <div className="relative inline-block text-left" id="language-selector" ref={dropdownRef}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Select learning language"
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-200 transition shadow-xs focus:outline-hidden focus:ring-2 focus:ring-[#00E599]/50"
+        className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full bg-white/15 hover:bg-white/25 border border-white/25 text-white text-xs font-medium backdrop-blur-sm transition shadow-xs cursor-pointer focus:outline-hidden"
       >
-        <Globe className="w-3.5 h-3.5 text-[#00E599]" />
-        <span className="font-medium">{currentObj.label}</span>
+        <Globe className="w-3.5 h-3.5 text-amber-300 sm:text-[#00E599]" />
+        <span className="font-bold text-[11px] sm:hidden">{currentObj.short}</span>
+        <span className="hidden sm:inline font-medium">{currentObj.label}</span>
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 rounded-xl bg-white dark:bg-[#0F1422] border border-slate-200 dark:border-slate-700 shadow-xl z-50 py-1.5 text-xs theme-transition">
+        <div className="absolute right-0 mt-2 w-48 rounded-2xl bg-[#0B0F19] dark:bg-[#0F1422] text-white border border-slate-800 dark:border-slate-700 shadow-2xl z-50 py-1.5 text-xs backdrop-blur-md">
           <div className="px-3 py-1.5 border-b border-slate-100 dark:border-slate-800 text-[10px] font-semibold tracking-wider text-slate-400 dark:text-slate-500 uppercase">
             Learning Language
           </div>

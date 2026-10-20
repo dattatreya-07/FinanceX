@@ -214,11 +214,16 @@ class SpeechService {
     }
 
     utterance.onend = () => {
+      if (this.isPausedState) return;
       this.currentQueueIndex++;
       this.playNextChunk();
     };
 
-    utterance.onerror = (e) => {
+    utterance.onerror = (e: any) => {
+      // Ignore interruption/cancellation errors caused by intentional pause or stop
+      if (this.isPausedState) return;
+      if (e?.error === 'interrupted' || e?.error === 'canceled') return;
+
       console.warn('[FinanceX Speech Error]', e);
       this.isSpeakingState = false;
       this.isPausedState = false;
@@ -231,22 +236,26 @@ class SpeechService {
   }
 
   public pause() {
-    if (!this.synth || !this.isSpeakingState) return;
-    this.synth.pause();
+    if (!this.synth || !this.isSpeakingState || this.isPausedState) return;
     this.isPausedState = true;
+    try {
+      this.synth.cancel();
+    } catch {}
     this.notify();
   }
 
   public resume() {
-    if (!this.synth || !this.isSpeakingState) return;
-    this.synth.resume();
+    if (!this.synth || !this.isSpeakingState || !this.isPausedState) return;
     this.isPausedState = false;
     this.notify();
+    this.playNextChunk();
   }
 
   public stop() {
     if (!this.synth) return;
-    this.synth.cancel();
+    try {
+      this.synth.cancel();
+    } catch {}
     this.sentenceQueue = [];
     this.currentQueueIndex = 0;
     this.isSpeakingState = false;

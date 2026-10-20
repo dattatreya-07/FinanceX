@@ -25,7 +25,8 @@ import {
   Calculator,
   Zap,
   ShieldCheck,
-  LogOut
+  LogOut,
+  Globe
 } from 'lucide-react';
 import { FinanceXLogo } from '../brand/FinanceXLogo';
 import { AppNavView, User, Notification } from '../../types/schema';
@@ -161,6 +162,9 @@ export const AppShell: React.FC<AppShellProps> = ({
       { id: 'arena' as AppNavView, label: 'Competitive Arena', icon: <Zap className="w-4 h-4 text-amber-500" />, badge: 'ARENA' },
       { id: 'ai-tutor' as AppNavView, label: t('ai_financial_tutor'), icon: <BrainCircuit className="w-4 h-4 text-[#FF5722]" />, badge: 'AI' },
     ]},
+    { section: 'Argus Fin Ecosystem', items: [
+      { id: 'argus-fin' as AppNavView, label: 'Argus Fin Platform', icon: <Globe className="w-4 h-4 text-emerald-400" />, badge: 'EXTERNAL' },
+    ]},
     { section: t('growth_and_community'), items: [
       { id: 'community' as AppNavView, label: t('community_forum'), icon: <Users className="w-4 h-4" /> },
       { id: 'goals' as AppNavView, label: t('learning_goals'), icon: <Target className="w-4 h-4" /> },
@@ -198,31 +202,36 @@ export const AppShell: React.FC<AppShellProps> = ({
       />
 
       {/* Dynamic Island Header Capsule (Emerald Jade & Wealth Gold Tone) */}
-      <header className="sticky top-0 z-40 w-full px-2 sm:px-6 pt-2 sm:pt-3 pb-1 flex-shrink-0 pointer-events-none theme-transition">
-        <div className="pointer-events-auto mx-auto w-[98%] sm:w-[96%] max-w-7xl rounded-2xl sm:rounded-full bg-gradient-to-r from-[#032B25] via-[#064E3B] to-[#047857] text-white shadow-[0_12px_40px_rgba(4,120,87,0.38)] backdrop-blur-xl border border-amber-300/30 px-3 sm:px-6 py-2 sm:py-2.5 flex items-center justify-between gap-2 sm:gap-4 transition-all duration-300">
+      <header className="sticky top-0 z-40 w-full px-1.5 sm:px-6 pt-1.5 sm:pt-3 pb-1 flex-shrink-0 pointer-events-none theme-transition">
+        <div className="pointer-events-auto mx-auto w-full sm:w-[96%] max-w-7xl rounded-2xl sm:rounded-full bg-gradient-to-r from-[#032B25] via-[#064E3B] to-[#047857] text-white shadow-[0_8px_30px_rgba(4,120,87,0.38)] backdrop-blur-xl border border-amber-300/30 px-2 sm:px-6 py-1.5 sm:py-2.5 flex items-center justify-between gap-1 sm:gap-4 transition-all duration-300">
           {/* Left: Mobile Drawer Trigger & Brand Logo */}
-          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+          <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
             <button
               onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}
-              className="lg:hidden p-1.5 text-white/90 hover:text-white rounded-lg hover:bg-white/20 transition cursor-pointer"
+              className="lg:hidden p-1 sm:p-1.5 text-white/90 hover:text-white rounded-lg hover:bg-white/20 transition cursor-pointer"
               aria-label="Toggle Navigation Drawer"
             >
-              {isMobileNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {isMobileNavOpen ? <X className="w-4.5 h-4.5 sm:w-5 sm:h-5" /> : <Menu className="w-4.5 h-4.5 sm:w-5 sm:h-5" />}
             </button>
             
-            <FinanceXLogo size="sm" variant="full" inverse={true} onClick={() => onNavigate('dashboard')} />
+            <div className="hidden sm:block">
+              <FinanceXLogo size="sm" variant="full" inverse={true} onClick={() => onNavigate('dashboard')} />
+            </div>
+            <div className="sm:hidden">
+              <FinanceXLogo size="sm" variant="icon" inverse={true} onClick={() => onNavigate('dashboard')} />
+            </div>
           </div>
 
           {/* Center: Fluidly Responsive Search Bar */}
-          <div className="flex-1 min-w-[90px] max-w-xs sm:max-w-sm md:max-w-md mx-1 sm:mx-3">
+          <div className="flex-1 min-w-[60px] max-w-xs sm:max-w-sm md:max-w-md mx-1 sm:mx-3">
             <button
               onClick={() => setIsSearchOpen(true)}
-              className="w-full flex items-center justify-between px-3 py-1.5 sm:py-2 bg-white/15 hover:bg-white/25 border border-white/25 rounded-full text-xs text-white placeholder-white/80 transition group shadow-xs cursor-pointer backdrop-blur-sm"
+              className="w-full flex items-center justify-between px-2 sm:px-3 py-1.5 sm:py-2 bg-white/15 hover:bg-white/25 border border-white/25 rounded-full text-xs text-white placeholder-white/80 transition group shadow-xs cursor-pointer backdrop-blur-sm"
             >
-              <div className="flex items-center gap-2 truncate">
+              <div className="flex items-center gap-1.5 sm:gap-2 truncate">
                 <Search className="w-3.5 h-3.5 text-amber-300 group-hover:text-amber-200 transition-colors flex-shrink-0" />
                 <span className="hidden sm:inline truncate font-medium text-white/90">Search NISM XV topics, formulas, ratios...</span>
-                <span className="sm:hidden text-[11px] truncate text-white/90">Search NISM...</span>
+                <span className="sm:hidden text-[11px] truncate text-white/90">Search...</span>
               </div>
               <kbd className="hidden md:inline-block text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/20 text-amber-200 border border-white/30">
                 ⌘K
@@ -231,20 +240,20 @@ export const AppShell: React.FC<AppShellProps> = ({
           </div>
 
           {/* Right: Consolidated Streak/XP (Single Pill), Capital, Theme, Language & User */}
-          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             {/* Unified Streak & XP Pill */}
             <div className="relative" ref={streakRef}>
               <button
                 onClick={toggleStreak}
-                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-white/15 hover:bg-white/25 border border-white/25 text-white text-xs font-mono font-bold transition shadow-xs cursor-pointer group"
+                className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-full bg-white/15 hover:bg-white/25 border border-white/25 text-white text-xs font-mono font-bold transition shadow-xs cursor-pointer group"
                 title="Continuous Learning Streak & XP"
               >
-                <span className="flex items-center gap-1 text-amber-300">
+                <span className="flex items-center gap-0.5 sm:gap-1 text-amber-300">
                   <Flame className="w-3.5 h-3.5 fill-amber-400 text-amber-300 animate-pulse" />
                   <span>{user.current_streak || 0}d</span>
                 </span>
-                <span className="text-white/40">|</span>
-                <span className="flex items-center gap-1 text-emerald-300">
+                <span className="hidden sm:inline text-white/40">|</span>
+                <span className="hidden sm:flex items-center gap-1 text-emerald-300">
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>{user.xp_points || 0} XP</span>
                 </span>
@@ -342,7 +351,8 @@ export const AppShell: React.FC<AppShellProps> = ({
             <div className="relative" ref={profileMenuRef}>
               <button
                 onClick={toggleProfileMenu}
-                className="flex items-center gap-1.5 p-1 pl-1.5 rounded-full bg-white/20 hover:bg-white/30 border border-white/30 text-white transition cursor-pointer"
+                className="flex items-center gap-1 sm:gap-1.5 p-0.5 sm:p-1 sm:pl-1.5 rounded-full bg-white/20 hover:bg-white/30 border border-white/30 text-white transition cursor-pointer"
+                aria-label="Learner Profile Menu"
               >
                 <img
                   src={user.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
@@ -352,7 +362,7 @@ export const AppShell: React.FC<AppShellProps> = ({
                 <span className="text-xs font-bold text-white hidden md:inline max-w-[90px] truncate">
                   {user.full_name.split(' ')[0]}
                 </span>
-                <ChevronDown className="w-3.5 h-3.5 text-white/80" />
+                <ChevronDown className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white/80 hidden sm:inline" />
               </button>
 
             {isProfileMenuOpen && (
@@ -431,6 +441,66 @@ export const AppShell: React.FC<AppShellProps> = ({
         </div>
       </div>
     </header>
+
+      {/* Mobile Navigation Drawer Overlay */}
+      {isMobileNavOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          <div 
+            onClick={() => setIsMobileNavOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity" 
+          />
+          <div className="relative w-72 max-w-[85vw] h-full bg-white dark:bg-[#0A0D14] border-r border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col z-10 overflow-y-auto">
+            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-[#032B25] to-[#047857] text-white">
+              <FinanceXLogo size="sm" variant="full" inverse={true} onClick={() => { onNavigate('dashboard'); setIsMobileNavOpen(false); }} />
+              <button
+                onClick={() => setIsMobileNavOpen(false)}
+                className="p-1 rounded-lg text-white/80 hover:text-white hover:bg-white/20 transition cursor-pointer"
+                aria-label="Close navigation"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-3 space-y-4 flex-1">
+              {navItems.map((group, gIdx) => (
+                <div key={gIdx} className="space-y-1">
+                  <div className="px-3 text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold">
+                    {group.section}
+                  </div>
+                  {group.items.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        onNavigate(item.id);
+                        setIsMobileNavOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                        currentView === item.id
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className={currentView === item.id ? 'text-emerald-500' : 'text-slate-400'}>
+                          {item.icon}
+                        </span>
+                        <span>{item.label}</span>
+                      </div>
+                      {(item as any).badge && (
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-amber-400/20 text-amber-600 dark:text-amber-400 font-bold">
+                          {(item as any).badge}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              ))}
+            </div>
+            <div className="p-3 border-t border-slate-100 dark:border-slate-800 text-center">
+              <span className="text-[10px] font-mono text-slate-400">FinanceX NISM XV AI Platform</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main App Body (Full Width - Static Sidebar Removed as per Item 2 & 4) */}
       <div className="flex-1 flex overflow-hidden w-full">
