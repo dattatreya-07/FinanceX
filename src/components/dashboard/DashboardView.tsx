@@ -11,7 +11,11 @@ import {
   Zap,
   Flame,
   Award,
-  BookOpen
+  BookOpen,
+  MessageSquare,
+  Download,
+  Smartphone,
+  Users
 } from 'lucide-react';
 import { 
   User, 
@@ -21,9 +25,11 @@ import {
   Goal, 
   DemoAccount,
   AppNavView,
-  ConceptMastery
+  ConceptMastery,
+  DiscussionThread
 } from '../../types/schema';
 import { spacedReviewService } from '../../services/spacedReviewService';
+import { communityService } from '../../services/communityService';
 import { GamifiedGoalMap } from './GamifiedGoalMap';
 
 interface DashboardViewProps {
@@ -35,6 +41,8 @@ interface DashboardViewProps {
   activeLesson: Lesson;
   demoAccount: DemoAccount;
   conceptMastery?: ConceptMastery[];
+  threads?: DiscussionThread[];
+  onOpenInstall?: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -45,9 +53,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   courses,
   activeLesson,
   demoAccount,
-  conceptMastery = []
+  conceptMastery = [],
+  threads,
+  onOpenInstall
 }) => {
   const dueReviews = spacedReviewService.getDueReviews(user.user_id, conceptMastery);
+  const liveThreads = (threads && threads.length > 0) ? threads : communityService.getInitialThreads();
 
   // Dynamic Level & XP Calculation
   const userXp = Number(user.xp_points || 0);
@@ -337,6 +348,93 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <p className="text-xs text-slate-400">No active goal configured.</p>
             )}
           </div>
+
+          {/* Tile 4: Active Community Discussions & Doubts */}
+          <div className="p-5 rounded-3xl bg-white dark:bg-[#0B0F19] border border-emerald-200/80 dark:border-slate-800 space-y-3 shadow-[0_10px_30px_rgba(4,120,87,0.06)]">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400">
+                  <MessageSquare className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-slate-900 dark:text-white">
+                    Learner Doubts & Forum
+                  </h3>
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                    Live peer discussions
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => onNavigate('community')}
+                className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer flex items-center gap-0.5"
+              >
+                <span>Forum ({liveThreads.length})</span>
+                <ChevronRight className="w-3 h-3" />
+              </button>
+            </div>
+
+            {/* List of top 2-3 recent threads */}
+            <div className="space-y-2 pt-1">
+              {liveThreads.slice(0, 3).map((thread) => (
+                <div
+                  key={thread.thread_id}
+                  onClick={() => onNavigate('community')}
+                  className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 hover:border-emerald-500 transition cursor-pointer space-y-1"
+                >
+                  <div className="flex items-center justify-between text-[9px] font-mono">
+                    <span className="px-1.5 py-0.2 rounded bg-emerald-100/70 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-400 font-bold">
+                      #{thread.tags?.[0] || 'NISM'}
+                    </span>
+                    <span className="text-slate-400">
+                      {thread.created_at || 'Recent'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] font-semibold text-slate-800 dark:text-slate-200 line-clamp-1">
+                    {thread.title}
+                  </p>
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 pt-0.5">
+                    <span className="truncate max-w-[130px] font-medium text-slate-500 dark:text-slate-400">
+                      By {thread.author_name || 'Community Member'}
+                    </span>
+                    <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">
+                      {thread.replies_count || 0} replies
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => onNavigate('community')}
+              className="w-full py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>Ask a Question or Browse Forum</span>
+            </button>
+          </div>
+
+          {/* Tile 5: Install App Banner */}
+          {onOpenInstall && (
+            <div className="p-4 rounded-3xl bg-gradient-to-r from-emerald-900 to-teal-950 text-white border border-emerald-500/30 shadow-lg space-y-2">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-emerald-500/20 text-[#00E599]">
+                  <Smartphone className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold leading-tight">Install FinanceX Web App</h4>
+                  <p className="text-[10px] text-emerald-200/80">Full-screen offline learning & instant access</p>
+                </div>
+              </div>
+              <button
+                onClick={onOpenInstall}
+                className="w-full py-2 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Install FinanceX on Device</span>
+              </button>
+            </div>
+          )}
 
         </div>
       </div>

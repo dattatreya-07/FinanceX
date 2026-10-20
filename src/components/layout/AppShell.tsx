@@ -26,7 +26,9 @@ import {
   Zap,
   ShieldCheck,
   LogOut,
-  Globe
+  Globe,
+  Smartphone,
+  Download
 } from 'lucide-react';
 import { FinanceXLogo } from '../brand/FinanceXLogo';
 import { AppNavView, User, Notification } from '../../types/schema';
@@ -47,6 +49,7 @@ interface AppShellProps {
   holdingsCount?: number;
   onOpenAuth: () => void;
   onSignOut?: () => void;
+  onOpenInstall?: () => void;
   children: React.ReactNode;
 }
 
@@ -59,6 +62,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   holdingsCount,
   onOpenAuth,
   onSignOut,
+  onOpenInstall,
   children
 }) => {
   const { t } = useTranslation('navigation');
@@ -401,6 +405,23 @@ export const AppShell: React.FC<AppShellProps> = ({
                     </span>
                   </button>
                 )}
+                {onOpenInstall && (
+                  <button
+                    onClick={() => {
+                      onOpenInstall();
+                      setIsProfileMenuOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-bold transition flex items-center justify-between cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Smartphone className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>Install App (PWA)</span>
+                    </span>
+                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300">
+                      OFFLINE
+                    </span>
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     onNavigate('settings');
@@ -495,6 +516,20 @@ export const AppShell: React.FC<AppShellProps> = ({
                 </div>
               ))}
             </div>
+            {onOpenInstall && (
+              <div className="p-3 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  onClick={() => {
+                    setIsMobileNavOpen(false);
+                    onOpenInstall();
+                  }}
+                  className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+                >
+                  <Smartphone className="w-4 h-4" />
+                  <span>Install FinanceX Web App</span>
+                </button>
+              </div>
+            )}
             <div className="p-3 border-t border-slate-100 dark:border-slate-800 text-center">
               <span className="text-[10px] font-mono text-slate-400">FinanceX NISM XV AI Platform</span>
             </div>

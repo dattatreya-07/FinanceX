@@ -16,9 +16,9 @@ import {
   MOCK_LESSONS, 
   MOCK_CERTIFICATIONS, 
   MOCK_QUESTIONS, 
-  MOCK_INSTRUMENTS, 
-  MOCK_DISCUSSION_THREADS 
+  MOCK_INSTRUMENTS 
 } from '../../data/mockData';
+import { communityService } from '../../services/communityService';
 import { AppNavView } from '../../types/schema';
 
 interface GlobalSearchModalProps {
@@ -74,8 +74,13 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
     (q) => q.question_text.toLowerCase().includes(normalizedQuery) || q.explanation.toLowerCase().includes(normalizedQuery)
   );
 
-  const matchingDiscussions = MOCK_DISCUSSION_THREADS.filter(
-    (d) => d.title.toLowerCase().includes(normalizedQuery) || d.tags.some(t => t.toLowerCase().includes(normalizedQuery))
+  const allDiscussions = communityService.getInitialThreads();
+  const matchingDiscussions = allDiscussions.filter(
+    (d) =>
+      d.title.toLowerCase().includes(normalizedQuery) ||
+      (d.content || '').toLowerCase().includes(normalizedQuery) ||
+      (d.tags || []).some((t) => t.toLowerCase().includes(normalizedQuery)) ||
+      (d.author_name || '').toLowerCase().includes(normalizedQuery)
   );
 
   const totalResults = matchingCourses.length + matchingLessons.length + matchingCertifications.length + matchingInstruments.length + matchingQuestions.length + matchingDiscussions.length;

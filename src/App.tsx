@@ -10,7 +10,8 @@ import { goalService } from './services/goalService';
 import { notificationService } from './services/notificationService';
 import { learningLoopService } from './services/learningLoopService';
 import { spacedReviewService } from './services/spacedReviewService';
-import { AppNavView, User, Course, Lesson, LessonContent, LessonResource, Quiz, Question, MockExam, Certification, Goal, Notification, DemoHolding, DemoTransaction, DemoAccount, Achievement, UserAchievement, Certificate, QuizAttempt, MockExamAttempt, ConceptMastery } from './types/schema';
+import { communityService } from './services/communityService';
+import { AppNavView, User, Course, Lesson, LessonContent, LessonResource, Quiz, Question, MockExam, Certification, Goal, Notification, DemoHolding, DemoTransaction, DemoAccount, Achievement, UserAchievement, Certificate, QuizAttempt, MockExamAttempt, ConceptMastery, DiscussionThread } from './types/schema';
 import { 
   MOCK_CURRENT_USER, 
   MOCK_COURSES, 
@@ -47,6 +48,7 @@ import { NISM_XV_CHAPTERS } from './data/nismFullCurriculum';
 import { BootExperience } from './components/brand/BootExperience';
 import { AppShell } from './components/layout/AppShell';
 import { AuthModal } from './components/auth/AuthModal';
+import { InstallAppModal, usePWAInstall } from './components/layout/InstallAppPrompt';
 import { PersonalizationFlow, UserPreferences } from './components/onboarding/PersonalizationFlow';
 import { LandingPageView } from './components/landing/LandingPageView';
 
@@ -126,6 +128,11 @@ export default function App() {
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register' | 'admin'>('login');
   const [isOnboarding, setIsOnboarding] = useState<boolean>(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+
+  // PWA Install & Community Threads State
+  const { isInstallable, isInstalled, isIOS, installApp } = usePWAInstall();
+  const [isInstallModalOpen, setIsInstallModalOpen] = useState<boolean>(false);
+  const [threads, setThreads] = useState<DiscussionThread[]>(() => communityService.getInitialThreads());
 
   const [currentView, setCurrentView] = useState<AppNavView>('landing');
   const [user, setUser] = useState<User>(INITIAL_FRESH_USER);
@@ -219,6 +226,17 @@ export default function App() {
 
   useEffect(() => {
     loadCatalogData();
+
+    // Fetch live community discussion threads
+    communityService.getThreads().then((loaded) => {
+      if (loaded && loaded.length > 0) setThreads(loaded);
+    });
+
+    const handleThreadsSync = () => {
+      setThreads(communityService.getInitialThreads());
+    };
+    window.addEventListener('financex-threads-updated', handleThreadsSync);
+
     const handleLangChange = () => {
       loadCatalogData();
     };
@@ -236,8 +254,31 @@ export default function App() {
     return () => {
       window.removeEventListener('financex-language-change', handleLangChange);
       window.removeEventListener('financex-xp-updated', handleXpUpdate);
+      window.removeEventListener('financex-threads-updated', handleThreadsSync);
     };
   }, []);
+
+  const handleAddThread = (newThread: DiscussionThread) => {
+    setThreads((prev) => [newThread, ...prev.filter((t) => t.thread_id !== newThread.thread_id)]);
+    setUser((prev) => ({
+      ...prev,
+      xp_points: (prev.xp_points || 0) + 50,
+      current_streak: Math.max(1, prev.current_streak || 1)
+    }));
+    setNotifications((prev) => [
+      {
+        notification_id: Date.now(),
+        user_id: 1,
+        type: 'COMMUNITY',
+        title: 'Discussion Thread Published!',
+        message: `Your thread "${newThread.title.slice(0, 45)}..." is now live across FinanceX (+50 XP).`,
+        read: false,
+        created_at: 'Just now',
+        priority: 'NORMAL'
+      },
+      ...prev
+    ]);
+  };
 
   // 2. Restore Supabase / Local Auth Session & Subscribe to Auth State Changes
   useEffect(() => {
@@ -1148,10 +1189,11 @@ export default function App() {
       case 'community':
         return (
           <CommunityView
-            threads={MOCK_DISCUSSION_THREADS}
+            threads={threads}
             replies={MOCK_DISCUSSION_REPLIES}
             currentUser={user}
             onNavigate={handleNavigate}
+            onAddThread={handleAddThread}
           />
         );
 
@@ -1244,6 +1286,8 @@ export default function App() {
               activeLesson={displayLesson}
               demoAccount={demoAccount}
               conceptMastery={conceptMastery}
+              threads={threads}
+              onOpenInstall={() => setIsInstallModalOpen(true)}
             />
           );
         }
@@ -1309,11 +1353,14 @@ export default function App() {
           <DashboardView
             user={user}
             onNavigate={handleNavigate}
-            recommendations={MOCK_AI_RECOMMENDATIONS}
+            recommendations={adaptiveRecommendations}
             goals={goals}
             courses={courses}
             activeLesson={displayLesson}
             demoAccount={demoAccount}
+            conceptMastery={conceptMastery}
+            threads={threads}
+            onOpenInstall={() => setIsInstallModalOpen(true)}
           />
         );
     }
@@ -1387,6 +1434,7 @@ export default function App() {
             holdingsCount={holdings.length}
             onOpenAuth={handleOpenSignIn}
             onSignOut={handleSignOut}
+            onOpenInstall={() => setIsInstallModalOpen(true)}
           >
             <div className="p-8 max-w-xl mx-auto text-center space-y-4 rounded-3xl bg-white dark:bg-[#0B0F19] border border-rose-200 dark:border-rose-900/40 shadow-xl my-12">
               <div className="w-14 h-14 rounded-2xl bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
@@ -1418,10 +1466,20 @@ export default function App() {
           holdingsCount={holdings.length}
           onOpenAuth={handleOpenSignIn}
           onSignOut={handleSignOut}
+          onOpenInstall={() => setIsInstallModalOpen(true)}
         >
           {renderCurrentView()}
         </AppShell>
       )}
+
+      {/* PWA App Install Modal */}
+      <InstallAppModal
+        isOpen={isInstallModalOpen}
+        onClose={() => setIsInstallModalOpen(false)}
+        onInstall={installApp}
+        isInstallable={isInstallable}
+        isIOS={isIOS}
+      />
     </>
   );
 }

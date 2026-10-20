@@ -254,6 +254,9 @@ export interface DiscussionThread {
   replies_count?: number;
   is_pinned?: boolean;
   is_solved?: boolean;
+  author_name?: string;
+  author_role?: string;
+  author_avatar?: string;
 }
 
 // 20. DISCUSSION_REPLY
@@ -265,6 +268,9 @@ export interface DiscussionReply {
   created_at?: string;
   upvotes?: number;
   is_accepted_answer?: boolean;
+  author_name?: string;
+  author_role?: string;
+  author_avatar?: string;
 }
 
 // 21. TAG

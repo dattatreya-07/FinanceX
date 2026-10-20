@@ -1,0 +1,32 @@
+{
+  "name": "FinanceX — Institutional Financial Education",
+  "short_name": "FinanceX",
+  "description": "Gamified AI Financial Education, NISM XV Certification & Simulation Trading Platform",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#07090E",
+  "theme_color": "#047857",
+  "categories": ["education", "finance", "productivity"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

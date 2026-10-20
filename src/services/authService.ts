@@ -209,6 +209,60 @@ export const authService = {
   },
 
   /**
+   * Authenticate with Google OAuth
+   */
+  async signInWithGoogle(): Promise<{ user: User | null; error: string | null; redirected?: boolean }> {
+    if (isSupabaseConfigured) {
+      try {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: typeof window !== 'undefined' ? window.location.origin : undefined
+          }
+        });
+        if (error) {
+          return { user: null, error: error.message };
+        }
+        return { user: null, error: null, redirected: true };
+      } catch (err: any) {
+        console.warn('Supabase Google OAuth error:', err);
+      }
+    }
+
+    // Client-side Google Identity Demo / Local Fallback
+    const googleEmail = 'learner.google@gmail.com';
+    const localUsers = getLocalUsers();
+    let profile: User;
+
+    if (localUsers[googleEmail]) {
+      profile = localUsers[googleEmail].profile;
+    } else {
+      profile = {
+        user_id: `google_${Date.now()}`,
+        email: googleEmail,
+        full_name: 'Google Learner',
+        phone_number: '',
+        account_status: 'ACTIVE',
+        role: 'USER',
+        knowledge_level_id: 1,
+        current_streak: 1,
+        longest_streak: 1,
+        xp_points: 150,
+        avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+        social_links: []
+      };
+      localUsers[googleEmail] = {
+        profile,
+        passwordHash: 'GOOGLE_OAUTH_TOKEN'
+      };
+      saveLocalUsers(localUsers);
+    }
+
+    this.setLocalActiveSession(profile);
+    return { user: profile, error: null };
+  },
+
+  /**
    * Resend Supabase Email Verification Link
    */
   async resendVerificationEmail(email: string): Promise<{ success: boolean; error: string | null }> {
