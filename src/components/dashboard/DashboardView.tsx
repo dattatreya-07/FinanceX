@@ -57,7 +57,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   else if (userXp >= 500) userLevel = 'Level 3 (Practitioner)';
   else if (userXp >= 100) userLevel = 'Level 2 (Apprentice)';
 
-  const currentCourse = courses.find((c) => c.course_id === activeLesson.course_id) || courses[0];
+  const currentCourse = courses.find((c) => c.course_id === activeLesson.course_id) || courses.find((c) => c.course_id === 3) || courses[0];
   const currentCourseLessonsCount = currentCourse?.estimated_hours ? Math.round(currentCourse.estimated_hours * 2) : 10;
   const completedLessonsInCourse = activeLesson.is_completed ? 1 : 0;
   const courseProgressPercent = Math.min(100, Math.round((completedLessonsInCourse / currentCourseLessonsCount) * 100));
@@ -95,7 +95,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
             <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium flex-wrap">
               <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold">
-                <Flame className="w-4 h-4 fill-current animate-pulse text-amber-500" /> {user.current_streak || 1} Day Streak
+                <Flame className="w-4 h-4 fill-current animate-pulse text-amber-500" /> {user.current_streak || 0} Day Streak
               </span>
               <span>•</span>
               <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
@@ -103,7 +103,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </span>
               <span>•</span>
               <span className="text-slate-700 dark:text-slate-300 font-semibold truncate max-w-xs sm:max-w-md">
-                {currentCourse?.course_title || 'NISM Series XV Track'}
+                {currentCourse?.course_title || 'NISM Series XV: Research Analyst'}
               </span>
             </div>
           </div>

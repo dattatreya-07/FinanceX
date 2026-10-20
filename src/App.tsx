@@ -3,7 +3,7 @@ import { ShieldAlert } from 'lucide-react';
 import { authService } from './services/authService';
 import { adminService } from './services/adminService';
 import { courseService } from './services/courseService';
-import { quizService } from './services/quizService';
+import { quizService, ALL_MASTER_QUIZZES } from './services/quizService';
 import { examService } from './services/examService';
 import { tradingService } from './services/tradingService';
 import { goalService } from './services/goalService';
@@ -135,11 +135,23 @@ export default function App() {
   const [lessons, setLessons] = useState<Lesson[]>(MOCK_LESSONS);
   const [lessonContents, setLessonContents] = useState<LessonContent[]>(MOCK_LESSON_CONTENTS);
   const [lessonResources, setLessonResources] = useState<LessonResource[]>(MOCK_LESSON_RESOURCES);
-  const [activeCourse, setActiveCourse] = useState<Course>(MOCK_COURSES[0]);
-  const [activeLesson, setActiveLesson] = useState<Lesson>(() => ({ ...MOCK_LESSONS[0], is_completed: false }));
+  const [activeCourse, setActiveCourse] = useState<Course>(() => MOCK_COURSES.find(c => c.course_id === 3) || MOCK_COURSES[0]);
+  const [activeLesson, setActiveLesson] = useState<Lesson>(() => {
+    const ch1 = NISM_XV_CHAPTERS[0];
+    return {
+      lesson_id: 101,
+      course_id: 3,
+      topic_id: 1,
+      title: `Chapter 1: ${ch1.chapterTitle}`,
+      summary: ch1.chapterSubtitle,
+      estimated_mins: 45,
+      is_completed: false,
+      order_index: 1
+    };
+  });
 
   // Quiz & Mock Exam State
-  const [quizzes, setQuizzes] = useState<Quiz[]>(MOCK_QUIZZES);
+  const [quizzes, setQuizzes] = useState<Quiz[]>(ALL_MASTER_QUIZZES);
   const [questions, setQuestions] = useState<Question[]>(MOCK_QUESTIONS);
   const [activeQuiz, setActiveQuiz] = useState<Quiz | null>(null);
   const [quizScoreResult, setQuizScoreResult] = useState<{ score: number; totalQuestions: number; correctCount: number } | null>(null);
@@ -190,7 +202,8 @@ export default function App() {
       ]);
       if (loadedCourses && loadedCourses.length > 0) {
         setCourses(loadedCourses);
-        setActiveCourse(loadedCourses[0]);
+        const nismCourse = loadedCourses.find(c => c.course_id === 3) || loadedCourses[0];
+        setActiveCourse(nismCourse);
       }
       if (loadedQuizzes && loadedQuizzes.length > 0) setQuizzes(loadedQuizzes);
       if (loadedExams && loadedExams.length > 0) setMockExams(loadedExams);
@@ -325,15 +338,49 @@ export default function App() {
     if (view === 'learn' && payload) {
       if (payload.course) setActiveCourse(payload.course);
       if (payload.lesson) setActiveLesson(payload.lesson);
+      if (payload.lessonId) {
+        const found = lessons.find((l) => l.lesson_id === payload.lessonId);
+        if (found) {
+          setActiveLesson(found);
+          const c = courses.find((crs) => crs.course_id === found.course_id);
+          if (c) setActiveCourse(c);
+        } else if (payload.lessonId > 100 && payload.lessonId <= 115) {
+          const chNum = payload.lessonId - 100;
+          const nismCh = NISM_XV_CHAPTERS.find(c => c.chapterNumber === chNum);
+          if (nismCh) {
+            const dynamicLesson: Lesson = {
+              lesson_id: payload.lessonId,
+              course_id: 3,
+              topic_id: chNum,
+              title: `Chapter ${chNum}: ${nismCh.chapterTitle}`,
+              summary: nismCh.chapterSubtitle,
+              estimated_mins: 45,
+              is_completed: false,
+              order_index: chNum
+            };
+            setActiveLesson(dynamicLesson);
+            const nismCourse = courses.find(c => c.course_id === 3) || courses[0];
+            if (nismCourse) setActiveCourse(nismCourse);
+          }
+        }
+      }
     }
 
     if (view === 'quizzes' && payload) {
-      if (payload.topicId) {
-        const targetQuiz = quizzes.find((q) => q.topic_id === payload.topicId) || quizzes[0];
-        if (targetQuiz) {
-          setActiveQuiz(targetQuiz);
-          setQuizScoreResult(null);
-        }
+      let targetQuiz: Quiz | undefined;
+      if (payload.quizId) {
+        targetQuiz = ALL_MASTER_QUIZZES.find((q) => q.quiz_id === payload.quizId) || quizzes.find((q) => q.quiz_id === payload.quizId);
+      } else if (payload.topicId) {
+        targetQuiz = quizzes.find((q) => q.topic_id === payload.topicId);
+      }
+      if (targetQuiz) {
+        setActiveQuiz(targetQuiz);
+        setQuizScoreResult(null);
+        quizService.getQuizQuestions(targetQuiz.quiz_id).then(qList => {
+          if (qList && qList.length > 0) {
+            setQuestions(qList);
+          }
+        });
       }
     }
 
@@ -979,11 +1026,14 @@ export default function App() {
           );
         }
         if (activeQuiz) {
-          const quizQuestions = questions.filter((q) => q.topic_id === activeQuiz.topic_id);
+          const quizQuestions = questions.filter((q) => 
+            q.topic_id === activeQuiz.topic_id || 
+            (activeQuiz.quiz_id > 100 && q.topic_id === activeQuiz.quiz_id - 100)
+          );
           return (
             <QuizRunner
               quiz={activeQuiz}
-              questions={quizQuestions.length > 0 ? quizQuestions : questions.slice(0, 5)}
+              questions={quizQuestions.length > 0 ? quizQuestions : questions}
               onComplete={handleQuizComplete}
               onOpenAIWithQuestion={(qText) => {
                 setAiTutorPrompt(`Help me understand why the correct answer is chosen for this question:\n"${qText}"`);
@@ -1001,9 +1051,13 @@ export default function App() {
             quizzes={quizzes}
             topics={MOCK_TOPICS}
             attempts={quizAttempts}
-            onStartQuiz={(q) => {
+            onStartQuiz={async (q) => {
               setActiveQuiz(q);
               setQuizScoreResult(null);
+              const qList = await quizService.getQuizQuestions(q.quiz_id);
+              if (qList && qList.length > 0) {
+                setQuestions(qList);
+              }
             }}
             onNavigate={handleNavigate}
           />

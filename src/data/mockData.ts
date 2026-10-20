@@ -1203,7 +1203,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
 export const MOCK_DEMO_ACCOUNT: DemoAccount = {
   demo_account_id: 1,
   user_id: 101,
-  virtual_balance: 742500.00,
+  virtual_balance: 1000000.00,
   currency: 'INR',
   initial_capital: 1000000.00
 };

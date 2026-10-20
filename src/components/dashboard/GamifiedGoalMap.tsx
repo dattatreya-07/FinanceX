@@ -42,7 +42,7 @@ export const GamifiedGoalMap: React.FC<GamifiedGoalMapProps> = ({ user, onNaviga
 
   const userXp = Number(user.xp_points || 0);
 
-  // Dynamic status based on real user XP
+  // Dynamic status based on real user XP & learning milestones
   const stages: StageNode[] = [
     {
       id: 1,
@@ -50,8 +50,8 @@ export const GamifiedGoalMap: React.FC<GamifiedGoalMapProps> = ({ user, onNaviga
       subtitle: 'Securities fundamentals, exchanges, T+1 settlement & regulatory role',
       chapters: 'Chapters 1, 2 & 3',
       xpReward: 150,
-      status: 'COMPLETED',
-      stars: 3,
+      status: userXp >= 150 ? 'COMPLETED' : 'ACTIVE',
+      stars: userXp >= 150 ? 3 : 0,
       targetView: 'learn',
       targetPayload: { lessonId: 101 },
       color: '#10B981',
@@ -63,10 +63,10 @@ export const GamifiedGoalMap: React.FC<GamifiedGoalMapProps> = ({ user, onNaviga
       subtitle: 'Monetary policy, inflation, Porter’s Five Forces & sectoral lifecycles',
       chapters: 'Chapters 4, 5 & 6',
       xpReward: 300,
-      status: userXp >= 150 ? 'COMPLETED' : 'ACTIVE',
-      stars: userXp >= 150 ? 3 : 2,
+      status: userXp >= 450 ? 'COMPLETED' : userXp >= 150 ? 'ACTIVE' : 'LOCKED',
+      stars: userXp >= 450 ? 3 : userXp >= 150 ? 1 : 0,
       targetView: 'learn',
-      targetPayload: { lessonId: 105 },
+      targetPayload: { lessonId: 104 },
       color: '#059669',
       topics: ['Repo Rate Transmission', 'IIP & PMI Indicators', 'Porter Five Forces', 'Cyclical vs Defensive Sectors']
     },
@@ -76,9 +76,10 @@ export const GamifiedGoalMap: React.FC<GamifiedGoalMapProps> = ({ user, onNaviga
       subtitle: 'Balance Sheet, P&L, Cash Flow, DuPont ROE decomposition & ratios',
       chapters: 'Chapters 7, 8 & 9',
       xpReward: 450,
-      status: userXp >= 450 ? 'COMPLETED' : userXp >= 150 ? 'ACTIVE' : 'UNLOCKED',
-      stars: userXp >= 450 ? 3 : 1,
-      targetView: 'calculators',
+      status: userXp >= 900 ? 'COMPLETED' : userXp >= 450 ? 'ACTIVE' : 'LOCKED',
+      stars: userXp >= 900 ? 3 : userXp >= 450 ? 1 : 0,
+      targetView: 'learn',
+      targetPayload: { lessonId: 107 },
       color: '#0D9488',
       topics: ['DuPont 3-Step Model', 'EV/EBITDA vs P/E', 'Auditor Notes & Related Party', 'Bonus vs Stock Split']
     },
@@ -88,8 +89,8 @@ export const GamifiedGoalMap: React.FC<GamifiedGoalMapProps> = ({ user, onNaviga
       subtitle: 'Free Cash Flow (FCFF/FCFE), WACC, Terminal Value & relative multiples',
       chapters: 'Chapters 10 & 11',
       xpReward: 600,
-      status: userXp >= 900 ? 'COMPLETED' : userXp >= 450 ? 'UNLOCKED' : 'LOCKED',
-      stars: 0,
+      status: userXp >= 1500 ? 'COMPLETED' : userXp >= 900 ? 'ACTIVE' : 'LOCKED',
+      stars: userXp >= 1500 ? 3 : userXp >= 900 ? 1 : 0,
       targetView: 'learn',
       targetPayload: { lessonId: 110 },
       color: '#0284C7',
@@ -99,11 +100,12 @@ export const GamifiedGoalMap: React.FC<GamifiedGoalMapProps> = ({ user, onNaviga
       id: 5,
       title: 'Risk, Derivatives & Technicals',
       subtitle: 'Portfolio Beta, Option Greeks (Delta/Gamma), Sharpe ratio & chart patterns',
-      chapters: 'Chapters 12, 13 & 15',
+      chapters: 'Chapters 12, 13, 14 & 15',
       xpReward: 800,
-      status: userXp >= 1500 ? 'COMPLETED' : userXp >= 900 ? 'UNLOCKED' : 'LOCKED',
-      stars: 0,
-      targetView: 'arena',
+      status: userXp >= 2200 ? 'COMPLETED' : userXp >= 1500 ? 'ACTIVE' : 'LOCKED',
+      stars: userXp >= 2200 ? 3 : userXp >= 1500 ? 1 : 0,
+      targetView: 'learn',
+      targetPayload: { lessonId: 112 },
       color: '#D97706',
       topics: ['Option Delta & Time Decay', 'Macaulay Duration', 'RSI & MACD Oscillators', 'Research Report Quality Checklist']
     },
@@ -113,9 +115,10 @@ export const GamifiedGoalMap: React.FC<GamifiedGoalMapProps> = ({ user, onNaviga
       subtitle: 'Official 100-mark simulation: 80 standalone MCQs + 5 case studies',
       chapters: 'Full Syllabus (100 Marks)',
       xpReward: 1200,
-      status: userXp >= 2500 ? 'COMPLETED' : userXp >= 1500 ? 'UNLOCKED' : 'LOCKED',
-      stars: 0,
+      status: userXp >= 3000 ? 'COMPLETED' : userXp >= 2200 ? 'ACTIVE' : 'LOCKED',
+      stars: userXp >= 3000 ? 3 : 0,
       targetView: 'mock-exams',
+      targetPayload: { examId: 1 },
       color: '#F59E0B',
       topics: ['80 Standalone MCQs', '5 Case Studies (20 Qs)', '25% Negative Marking', 'Passing Threshold: 60%']
     }
