@@ -130,7 +130,7 @@ export default function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
 
   // PWA Install & Community Threads State
-  const { isInstallable, isInstalled, isIOS, installApp } = usePWAInstall();
+  const { isInstallable, isInstalled, isIOS, promptInstall: installApp } = usePWAInstall();
   const [isInstallModalOpen, setIsInstallModalOpen] = useState<boolean>(false);
   const [threads, setThreads] = useState<DiscussionThread[]>(() => communityService.getInitialThreads());
 
@@ -150,7 +150,8 @@ export default function App() {
       course_id: 3,
       topic_id: 1,
       title: `Chapter 1: ${ch1.chapterTitle}`,
-      summary: ch1.chapterSubtitle,
+      description: ch1.summary,
+      resource_links: [],
       estimated_mins: 45,
       is_completed: false,
       order_index: 1
@@ -394,7 +395,8 @@ export default function App() {
               course_id: 3,
               topic_id: chNum,
               title: `Chapter ${chNum}: ${nismCh.chapterTitle}`,
-              summary: nismCh.chapterSubtitle,
+              description: nismCh.summary,
+              resource_links: [],
               estimated_mins: 45,
               is_completed: false,
               order_index: chNum

@@ -284,7 +284,7 @@ export const communityService = {
         localStorage.setItem(PERSISTENT_COMMUNITY_THREADS_KEY, JSON.stringify(updated));
 
         // Auto-like for author
-        const currentUserId = params.user ? params.user.email || params.user.user_id : 'guest_learner';
+        const currentUserId = String(params.user ? params.user.email || params.user.user_id : 'guest_learner');
         const likeKey = `${currentUserId}_thread_${threadId}`;
         const likes = getLocalUpvotes(currentUserId);
         likes[likeKey] = true;

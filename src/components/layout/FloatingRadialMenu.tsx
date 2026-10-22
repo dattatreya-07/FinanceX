@@ -149,8 +149,8 @@ export const FloatingRadialMenu: React.FC<FloatingRadialMenuProps> = ({
   });
 
   return (
-    <div ref={menuContainerRef} className="fixed left-0 top-1/2 -translate-y-1/2 z-50 pointer-events-auto select-none">
-      {/* 1. FLOATING DOCKED TRIGGER BUTTON */}
+    <div ref={menuContainerRef} className="fixed left-0 bottom-24 sm:bottom-28 z-50 pointer-events-auto select-none">
+      {/* 1. FLOATING DOCKED TRIGGER BUTTON (Appropriately placed in lower-left thumb zone) */}
       <motion.button
         whileHover={{ scale: 1.06, x: 3 }}
         whileTap={{ scale: 0.95 }}
@@ -197,17 +197,26 @@ export const FloatingRadialMenu: React.FC<FloatingRadialMenuProps> = ({
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
-              className="absolute left-0 top-1/2 -translate-y-1/2 w-[280px] sm:w-[320px] h-[360px] sm:h-[420px] pointer-events-auto touch-none"
+              className="absolute left-0 top-1/2 -translate-y-1/2 w-[280px] sm:w-[340px] h-[360px] sm:h-[420px] pointer-events-auto touch-none"
             >
-              {/* Decorative Subtle Glowing Track */}
+              {/* Semi-Circular Disc Surface (Contained within lower-left dial area, never overlapping central animation) */}
               <div 
-                className="absolute left-0 top-1/2 -translate-y-1/2 rounded-full border border-dashed border-emerald-500/25 dark:border-emerald-400/25 pointer-events-none shadow-[0_0_50px_rgba(5,150,105,0.15)]"
+                className="absolute left-0 top-1/2 -translate-y-1/2 rounded-r-full bg-white/90 dark:bg-[#070D18]/95 backdrop-blur-xl border-t border-r border-b border-emerald-500/30 dark:border-emerald-500/35 shadow-[0_12px_40px_rgba(4,120,87,0.22)] pointer-events-none overflow-hidden"
                 style={{
-                  width: `${radius * 2}px`,
-                  height: `${radius * 2}px`,
-                  transform: 'translate(-50%, -50%)'
+                  width: `${radius + 40}px`,
+                  height: `${radius * 2 + 50}px`
                 }}
-              />
+              >
+                {/* Subtle Curved Track inside the Semi-Circular Disc */}
+                <div 
+                  className="absolute left-0 top-1/2 -translate-y-1/2 rounded-full border border-dashed border-emerald-500/35 dark:border-emerald-400/35 pointer-events-none"
+                  style={{
+                    width: `${radius * 2}px`,
+                    height: `${radius * 2}px`,
+                    transform: 'translate(-50%, -50%)'
+                  }}
+                />
+              </div>
 
               {/* Mobile Thumb Step Buttons: Rotate Up & Down with ease */}
               <div className="absolute left-2.5 top-2 flex flex-col gap-2 z-20">
