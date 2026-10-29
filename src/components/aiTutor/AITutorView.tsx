@@ -20,6 +20,7 @@ import {
 import { AppNavView } from '../../types/schema';
 import { aiService, AskTutorResponse } from '../../services/aiService';
 import { speechService, SpeechRate } from '../../services/speechService';
+import { FormulaMarkdownRenderer } from '../common/FormulaMarkdownRenderer';
 
 interface Message {
   id: string;
@@ -323,9 +324,13 @@ export const AITutorView: React.FC<AITutorViewProps> = ({
                   </div>
                 )}
 
-                <div className="whitespace-pre-line leading-relaxed">
-                  {msg.text}
-                </div>
+                {isAI ? (
+                  <FormulaMarkdownRenderer content={msg.text} className="text-xs sm:text-sm" />
+                ) : (
+                  <div className="whitespace-pre-line leading-relaxed">
+                    {msg.text}
+                  </div>
+                )}
 
                 {/* Mathematical formulas pillbox if any */}
                 {msg.formulas && msg.formulas.length > 0 && (

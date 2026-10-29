@@ -10,11 +10,16 @@ import {
   Sparkles, 
   Bookmark, 
   Play, 
-  Check,
-  FileText,
-  Download,
-  ExternalLink,
-  Award
+  Check, 
+  FileText, 
+  Download, 
+  ExternalLink, 
+  Award,
+  HelpCircle,
+  XCircle,
+  Lightbulb,
+  ShieldCheck,
+  Calculator
 } from 'lucide-react';
 import { 
   Lesson, 
@@ -24,6 +29,7 @@ import {
   AppNavView 
 } from '../../types/schema';
 import { NISM_XV_CHAPTERS } from '../../data/nismFullCurriculum';
+import { FormulaMarkdownRenderer } from '../common/FormulaMarkdownRenderer';
 
 interface LessonViewProps {
   lesson: Lesson;
@@ -80,9 +86,11 @@ export const LessonView: React.FC<LessonViewProps> = ({
   const [userNote, setUserNote] = useState('Key concept note: Always cross-verify Operating Cash Flow with Net Profit when evaluating earnings quality.');
   const [activeTab, setActiveTab] = useState<'SYLLABUS' | 'RESOURCES' | 'NOTES'>('SYLLABUS');
   const [isCompleted, setIsCompleted] = useState(lesson.is_completed || false);
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, 'A' | 'B' | 'C' | 'D'>>({});
 
   React.useEffect(() => {
     setIsCompleted(lesson.is_completed || false);
+    setSelectedAnswers({});
   }, [lesson.lesson_id, lesson.is_completed]);
 
   const currentIndex = allLessons.findIndex((l) => l.lesson_id === lesson.lesson_id);
@@ -98,6 +106,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
     ? (NISM_XV_VIDEOS[chapterNumber] || NISM_XV_VIDEOS[1])
     : (DEFAULT_VIDEOS[lesson.lesson_id] || DEFAULT_VIDEOS[1]);
 
+  const nismChapter = NISM_XV_CHAPTERS.find(c => c.chapterNumber === chapterNumber);
+
   return (
     <div className="space-y-6" id="lesson-view">
       {/* Top Header & Breadcrumbs */}
@@ -110,8 +120,18 @@ export const LessonView: React.FC<LessonViewProps> = ({
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
-              {course.course_title} • Lesson {currentIndex >= 0 ? currentIndex + 1 : chapterNumber} of {Math.max(15, allLessons.length)}
+            <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400 flex items-center gap-2">
+              <span>{course.course_title}</span>
+              <span>•</span>
+              <span>Lesson {currentIndex >= 0 ? currentIndex + 1 : chapterNumber} of {Math.max(15, allLessons.length)}</span>
+              {nismChapter && (
+                <>
+                  <span>•</span>
+                  <span className="px-1.5 py-0.2 rounded bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 font-bold">
+                    {nismChapter.weightageMarks} Marks
+                  </span>
+                </>
+              )}
             </div>
             <h1 className="text-xl sm:text-2xl font-display font-black text-slate-900 dark:text-white">
               {lesson.title}
@@ -132,7 +152,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
               }`}
             >
               <BookOpen className="w-3.5 h-3.5 text-emerald-600 dark:text-[#00E599]" />
-              <span>Read Text</span>
+              <span>Interactive Text</span>
             </button>
             <button
               onClick={() => setActiveMode('VIDEO')}
@@ -238,114 +258,222 @@ export const LessonView: React.FC<LessonViewProps> = ({
           {/* Text Mode Rich Content Card */}
           <div className="rounded-3xl bg-white dark:bg-[#0B0F19] border border-slate-200 dark:border-slate-800 p-6 sm:p-8 space-y-6 shadow-sm dark:shadow-xl leading-relaxed theme-transition">
             {/* Key Takeaways Highlight Box */}
-            {content.key_takeaways && (
-              <div className="p-5 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 dark:from-slate-900 dark:to-[#0B1524] border border-emerald-200 dark:border-[#00E599]/30 space-y-2 shadow-xs">
-                <div className="text-xs font-mono font-bold text-emerald-800 dark:text-[#00E599] flex items-center gap-1.5 uppercase">
-                  <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-[#00E599]" />
-                  <span>Key Exam Takeaways (NISM Series VIII)</span>
+            {content.key_takeaways && content.key_takeaways.length > 0 && (
+              <div className="p-5 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 dark:from-slate-900 dark:to-[#0B1524] border border-emerald-200 dark:border-[#00E599]/30 space-y-2.5 shadow-xs">
+                <div className="text-xs font-mono font-bold text-emerald-800 dark:text-[#00E599] flex items-center gap-1.5 uppercase tracking-wide">
+                  <Sparkles className="w-4 h-4 text-emerald-600 dark:text-[#00E599]" />
+                  <span>Key Exam Takeaways (NISM Series XV)</span>
                 </div>
-                <ul className="space-y-1.5 text-xs text-slate-700 dark:text-slate-300">
+                <ul className="space-y-2 text-xs text-slate-700 dark:text-slate-300">
                   {content.key_takeaways.map((takeaway, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <span className="text-emerald-600 dark:text-[#00E599] font-bold">✓</span>
-                      <span>{takeaway}</span>
+                    <li key={i} className="flex items-start gap-2.5">
+                      <span className="text-emerald-600 dark:text-[#00E599] font-bold mt-0.5">✓</span>
+                      <span className="leading-relaxed">{takeaway}</span>
                     </li>
                   ))}
                 </ul>
               </div>
             )}
 
-            {/* Dynamic Markdown Body Rendering */}
-            <div className="prose prose-slate dark:prose-invert max-w-none text-slate-700 dark:text-slate-300 text-sm space-y-4">
-              {content.raw_body ? (
-                content.raw_body.split('\n\n').map((block, idx) => {
-                  const trimmed = block.trim();
-                  if (!trimmed) return null;
-
-                  if (trimmed.startsWith('### ')) {
-                    return (
-                      <h3 key={idx} className="text-lg font-display font-black text-slate-900 dark:text-white pt-2">
-                        {trimmed.replace(/^###\s+/, '')}
-                      </h3>
-                    );
-                  }
-                  if (trimmed.startsWith('## ')) {
-                    return (
-                      <h2 key={idx} className="text-xl font-display font-black text-slate-900 dark:text-white pt-3 border-t border-slate-100 dark:border-slate-800/60 first:border-0 first:pt-0">
-                        {trimmed.replace(/^##\s+/, '')}
-                      </h2>
-                    );
-                  }
-                  if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-                    const items = trimmed.split('\n').filter(Boolean);
-                    return (
-                      <ul key={idx} className="space-y-1.5 list-disc list-inside text-slate-700 dark:text-slate-300 pl-2">
-                        {items.map((item, itemIdx) => {
-                          const cleanItem = item.replace(/^[-*]\s+/, '');
-                          // Format bold text
-                          const parts = cleanItem.split(/(\*\*.*?\*\*)/g);
-                          return (
-                            <li key={itemIdx}>
-                              {parts.map((part, pIdx) => {
-                                if (part.startsWith('**') && part.endsWith('**')) {
-                                  return <strong key={pIdx} className="text-slate-900 dark:text-white">{part.slice(2, -2)}</strong>;
-                                }
-                                return part;
-                              })}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    );
-                  }
-                  if (trimmed.startsWith('```') || trimmed.includes(' = ') && trimmed.length < 120 && !trimmed.includes('\n')) {
-                    return (
-                      <div key={idx} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 font-mono text-xs text-emerald-800 dark:text-[#00E599] border border-slate-200 dark:border-slate-800 font-bold overflow-x-auto">
-                        {trimmed.replace(/```[a-z]*/g, '').trim()}
-                      </div>
-                    );
-                  }
-
-                  // Standard paragraph with bold formatting
-                  const parts = trimmed.split(/(\*\*.*?\*\*|\*.*?\*)/g);
-                  return (
-                    <p key={idx} className="leading-relaxed">
-                      {parts.map((part, pIdx) => {
-                        if (part.startsWith('**') && part.endsWith('**')) {
-                          return <strong key={pIdx} className="text-slate-900 dark:text-white">{part.slice(2, -2)}</strong>;
-                        }
-                        if (part.startsWith('*') && part.endsWith('*')) {
-                          return <em key={pIdx} className="text-slate-800 dark:text-slate-200">{part.slice(1, -1)}</em>;
-                        }
-                        return part;
-                      })}
-                    </p>
-                  );
-                })
-              ) : (
-                <div className="space-y-3">
-                  <h2 className="text-xl font-display font-black text-slate-900 dark:text-white">
-                    {lesson.title}
-                  </h2>
-                  <p>Comprehensive interactive lesson module. Review the syllabus, key takeaways, and mathematical models below.</p>
-                </div>
-              )}
+            {/* Structured Text & Mathematical Equations Renderer */}
+            <div className="lesson-body-content pt-2">
+              <FormulaMarkdownRenderer
+                content={content.raw_body || nismChapter?.detailedBody || ''}
+              />
             </div>
 
-            {/* Interactive Formulas Explorer */}
+            {/* Chapter Case Study Card */}
+            {nismChapter?.caseStudy && (
+              <div className="p-6 rounded-3xl bg-gradient-to-br from-amber-50/80 via-white to-amber-50/40 dark:from-[#0F1420] dark:via-[#0B0F19] dark:to-[#0F1420] border-2 border-amber-300/60 dark:border-amber-500/30 space-y-3 shadow-md">
+                <div className="flex items-center justify-between pb-2 border-b border-amber-200 dark:border-amber-500/20">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400">
+                      <ShieldCheck className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-mono font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide">
+                      Real-World Case Study & SEBI Precedent
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-700">
+                    NISM XV ANALYSIS
+                  </span>
+                </div>
+
+                <h3 className="text-base font-display font-black text-slate-900 dark:text-white">
+                  {nismChapter.caseStudy.title}
+                </h3>
+
+                <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                  {nismChapter.caseStudy.narrative}
+                </p>
+
+                <div className="p-3.5 rounded-2xl bg-amber-100/70 dark:bg-amber-950/40 border border-amber-300/50 dark:border-amber-600/30 flex items-start gap-2.5 text-xs text-amber-950 dark:text-amber-200">
+                  <Lightbulb className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="font-bold">Key Regulatory Lesson: </strong>
+                    <span>{nismChapter.caseStudy.keyLesson}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Interactive Formulas & Mathematical Models Explorer */}
             {content.formulas && content.formulas.length > 0 && (
               <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-                <div className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  Mathematical Formulas & Pricing Models
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Calculator className="w-4 h-4 text-emerald-600 dark:text-[#00E599]" />
+                    <span>Mathematical Formulas & Pricing Models</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    {content.formulas.length} Core Formulas
+                  </span>
                 </div>
                 <div className="grid grid-cols-1 gap-3">
                   {content.formulas.map((form, idx) => (
-                    <div key={idx} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                      <div className="font-bold text-xs text-slate-900 dark:text-white mb-1">{form.label}</div>
-                      <div className="font-mono text-xs text-cyan-700 dark:text-cyan-400 my-2 font-bold">{form.formula}</div>
-                      <div className="text-[11px] text-slate-600 dark:text-slate-400">{form.explanation}</div>
+                    <div
+                      key={idx}
+                      className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1.5 hover:border-emerald-500/50 transition"
+                    >
+                      <div className="font-bold text-xs text-slate-900 dark:text-white flex items-center justify-between">
+                        <span>{form.label}</span>
+                        <span className="text-[10px] font-mono text-emerald-600 dark:text-[#00E599] font-bold">NISM XV FORMULA</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800">
+                        <FormulaMarkdownRenderer content={`$$${form.formula}$$`} />
+                      </div>
+                      <div className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed pt-1">
+                        {form.explanation}
+                      </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* Interactive Chapter Review Questions / Self-Check */}
+            {nismChapter?.reviewQuestions && nismChapter.reviewQuestions.length > 0 && (
+              <div className="space-y-4 pt-6 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-[#00E599]">
+                      <HelpCircle className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-display font-black text-slate-900 dark:text-white">
+                        Chapter Self-Check & Question Drill
+                      </h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Instant exam simulation questions with official rationale.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => onNavigate('quizzes', { quizId: 100 + chapterNumber })}
+                    className="text-xs font-bold text-emerald-600 dark:text-[#00E599] hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>Full Chapter Quiz</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {nismChapter.reviewQuestions.map((q) => {
+                    const selected = selectedAnswers[q.questionId];
+                    const isAnswered = selected !== undefined;
+                    const isCorrect = selected === q.correctOption;
+
+                    const options: Array<{ key: 'A' | 'B' | 'C' | 'D'; label: string }> = [
+                      { key: 'A', label: q.optionA },
+                      { key: 'B', label: q.optionB },
+                      { key: 'C', label: q.optionC },
+                      { key: 'D', label: q.optionD }
+                    ];
+
+                    return (
+                      <div
+                        key={q.questionId}
+                        className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-3"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-relaxed">
+                            {q.questionText}
+                          </p>
+                          <span className={`text-[9px] font-mono px-2 py-0.5 rounded-full font-bold uppercase shrink-0 ${
+                            q.difficulty === 'EASY'
+                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                              : q.difficulty === 'MEDIUM'
+                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                              : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
+                          }`}>
+                            {q.difficulty}
+                          </span>
+                        </div>
+
+                        {/* Options Grid */}
+                        <div className="grid grid-cols-1 gap-2">
+                          {options.map((opt) => {
+                            let optionClass = 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300';
+                            
+                            if (isAnswered) {
+                              if (opt.key === q.correctOption) {
+                                optionClass = 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-500 text-emerald-900 dark:text-emerald-200 font-bold';
+                              } else if (selected === opt.key) {
+                                optionClass = 'bg-rose-50 dark:bg-rose-950/50 border-rose-500 text-rose-900 dark:text-rose-200';
+                              } else {
+                                optionClass = 'opacity-50 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800';
+                              }
+                            }
+
+                            return (
+                              <button
+                                key={opt.key}
+                                onClick={() => setSelectedAnswers((prev) => ({ ...prev, [q.questionId]: opt.key }))}
+                                className={`p-3 rounded-xl border text-xs text-left transition flex items-center justify-between gap-3 cursor-pointer ${optionClass}`}
+                              >
+                                <div className="flex items-center gap-2.5">
+                                  <span className="w-5 h-5 rounded-full border border-current text-[10px] font-mono font-bold flex items-center justify-center shrink-0">
+                                    {opt.key}
+                                  </span>
+                                  <span>{opt.label}</span>
+                                </div>
+                                {isAnswered && opt.key === q.correctOption && (
+                                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-[#00E599] shrink-0" />
+                                )}
+                                {isAnswered && selected === opt.key && opt.key !== q.correctOption && (
+                                  <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Rationale & Explanation reveal */}
+                        {isAnswered && (
+                          <div className={`p-3.5 rounded-xl border text-xs leading-relaxed space-y-1 ${
+                            isCorrect
+                              ? 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700/60 text-emerald-950 dark:text-emerald-200'
+                              : 'bg-amber-50/70 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700/60 text-amber-950 dark:text-amber-200'
+                          }`}>
+                            <div className="font-bold flex items-center gap-1.5">
+                              {isCorrect ? (
+                                <>
+                                  <Check className="w-4 h-4 text-emerald-600" />
+                                  <span>Correct Answer (Option {q.correctOption})</span>
+                                </>
+                              ) : (
+                                <>
+                                  <XCircle className="w-4 h-4 text-rose-600" />
+                                  <span>Incorrect. The correct answer is Option {q.correctOption}.</span>
+                                </>
+                              )}
+                            </div>
+                            <p>{q.explanation}</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
