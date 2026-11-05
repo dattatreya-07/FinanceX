@@ -14,6 +14,7 @@ import {
   LMSAssignment, 
   LMSAssignmentSubmission, 
   InstructorPrivateNote,
+  InstructorIntervention,
   LearnerActivityEvent,
   LMSInstitutionStats 
 } from '../types/schema';
@@ -25,7 +26,8 @@ import {
   SEED_ASSIGNMENTS, 
   SEED_SUBMISSIONS, 
   SEED_INSTRUCTOR_NOTES, 
-  SEED_ACTIVITY_EVENTS 
+  SEED_ACTIVITY_EVENTS,
+  SEED_INTERVENTIONS
 } from '../data/lmsDemoData';
 
 const LMS_STORAGE_KEY = 'financex_lms_demo_state_v1';
@@ -38,6 +40,7 @@ export interface LMSStateData {
   submissions: LMSAssignmentSubmission[];
   notes: InstructorPrivateNote[];
   activity: LearnerActivityEvent[];
+  interventions: InstructorIntervention[];
 }
 
 type StateListener = (state: LMSStateData) => void;
@@ -57,6 +60,9 @@ class LMSService {
         if (stored) {
           const parsed = JSON.parse(stored);
           if (parsed && Array.isArray(parsed.enrollments)) {
+            if (!parsed.interventions) {
+              parsed.interventions = JSON.parse(JSON.stringify(SEED_INTERVENTIONS));
+            }
             return parsed;
           }
         }
@@ -72,7 +78,8 @@ class LMSService {
       assignments: JSON.parse(JSON.stringify(SEED_ASSIGNMENTS)),
       submissions: JSON.parse(JSON.stringify(SEED_SUBMISSIONS)),
       notes: JSON.parse(JSON.stringify(SEED_INSTRUCTOR_NOTES)),
-      activity: JSON.parse(JSON.stringify(SEED_ACTIVITY_EVENTS))
+      activity: JSON.parse(JSON.stringify(SEED_ACTIVITY_EVENTS)),
+      interventions: JSON.parse(JSON.stringify(SEED_INTERVENTIONS))
     };
   }
 
@@ -115,9 +122,54 @@ class LMSService {
       assignments: JSON.parse(JSON.stringify(SEED_ASSIGNMENTS)),
       submissions: JSON.parse(JSON.stringify(SEED_SUBMISSIONS)),
       notes: JSON.parse(JSON.stringify(SEED_INSTRUCTOR_NOTES)),
-      activity: JSON.parse(JSON.stringify(SEED_ACTIVITY_EVENTS))
+      activity: JSON.parse(JSON.stringify(SEED_ACTIVITY_EVENTS)),
+      interventions: JSON.parse(JSON.stringify(SEED_INTERVENTIONS))
     };
     this.saveState();
+  }
+
+  public getInterventions(learnerId?: string | number): InstructorIntervention[] {
+    const list = this.state.interventions || [];
+    if (!learnerId) return list;
+    return list.filter(i => String(i.learner_id) === String(learnerId));
+  }
+
+  public createIntervention(intv: Omit<InstructorIntervention, 'intervention_id' | 'created_at'>): InstructorIntervention {
+    const newRecord: InstructorIntervention = {
+      ...intv,
+      intervention_id: `intv-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      created_at: new Date().toISOString()
+    };
+    this.state.interventions = [newRecord, ...(this.state.interventions || [])];
+    this.saveState();
+    return newRecord;
+  }
+
+  public resolveIntervention(interventionId: string): void {
+    if (!this.state.interventions) return;
+    this.state.interventions = this.state.interventions.map(i => 
+      i.intervention_id === interventionId 
+        ? { ...i, status: 'RESOLVED' as const, resolved_at: new Date().toISOString() } 
+        : i
+    );
+    this.saveState();
+  }
+
+  public getLearnerSubmissions(learnerId: string | number, courseId?: number): LMSAssignmentSubmission[] {
+    return this.state.submissions.filter(s => {
+      const matchLearner = String(s.learner_id) === String(learnerId);
+      if (!matchLearner) return false;
+      if (courseId) {
+        const assignment = this.state.assignments.find(a => a.assignment_id === s.assignment_id);
+        return assignment?.course_id === courseId;
+      }
+      return true;
+    });
+  }
+
+  public getLearnerActivity(learnerId?: string | number): LearnerActivityEvent[] {
+    if (!learnerId) return this.state.activity || [];
+    return (this.state.activity || []).filter(e => String(e.learner_id) === String(learnerId));
   }
 
   public recordActivity(event: Omit<LearnerActivityEvent, 'event_id' | 'timestamp'>): void {

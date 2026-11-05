@@ -997,6 +997,20 @@ export interface InstructorPrivateNote {
   created_at: string;
 }
 
+export interface InstructorIntervention {
+  intervention_id: string;
+  learner_id: string | number;
+  instructor_id: string | number;
+  instructor_name: string;
+  course_id: number;
+  type: 'TUTORING' | 'REMEDIAL_QUIZ' | 'DEADLINE_EXTENSION' | 'ONE_ON_ONE' | 'DIFFICULTY_FLAG';
+  title: string;
+  description: string;
+  status: 'PENDING' | 'SCHEDULED' | 'RESOLVED';
+  created_at: string;
+  resolved_at?: string;
+}
+
 export interface LMSInstitutionStats {
   totalLearners: number;
   totalInstructors: number;

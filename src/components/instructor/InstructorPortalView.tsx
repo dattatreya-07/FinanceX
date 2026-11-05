@@ -24,7 +24,10 @@ import {
   BarChart3,
   Layers,
   HelpCircle,
-  FileText
+  FileText,
+  Activity,
+  Flag,
+  Check
 } from 'lucide-react';
 import { 
   User as UserType, 
@@ -32,6 +35,7 @@ import {
   LMSAssignment, 
   LMSAssignmentSubmission, 
   InstructorPrivateNote,
+  InstructorIntervention,
   LearnerActivityEvent,
   AppNavView,
   CourseBatch,
@@ -68,9 +72,15 @@ export const InstructorPortalView: React.FC<InstructorPortalViewProps> = ({
   const itemsPerPage = 6;
 
   // Modals & Panels
+  type DossierTab = 'overview' | 'courses' | 'assessments' | 'assignments' | 'activity' | 'notes' | 'interventions';
   const [selectedLearnerDetail, setSelectedLearnerDetail] = useState<CourseEnrollmentRecord | null>(null);
+  const [activeDossierTab, setActiveDossierTab] = useState<DossierTab>('overview');
   const [learnerNotes, setLearnerNotes] = useState<InstructorPrivateNote[]>([]);
+  const [learnerInterventions, setLearnerInterventions] = useState<InstructorIntervention[]>([]);
   const [newNoteText, setNewNoteText] = useState('');
+  const [newInterventionTitle, setNewInterventionTitle] = useState('');
+  const [newInterventionDesc, setNewInterventionDesc] = useState('');
+  const [newInterventionType, setNewInterventionType] = useState<InstructorIntervention['type']>('TUTORING');
   const [evaluatingSubmission, setEvaluatingSubmission] = useState<LMSAssignmentSubmission | null>(null);
   const [evalScore, setEvalScore] = useState<number>(90);
   const [evalFeedback, setEvalFeedback] = useState<string>('');
@@ -103,10 +113,12 @@ export const InstructorPortalView: React.FC<InstructorPortalViewProps> = ({
     return lmsService.subscribe(refreshData);
   }, []);
 
-  // When selected learner changes, load private notes
+  // When selected learner changes, load private notes & interventions
   useEffect(() => {
     if (selectedLearnerDetail) {
       setLearnerNotes(lmsService.getInstructorNotes(selectedLearnerDetail.learner_id));
+      setLearnerInterventions(lmsService.getInterventions(selectedLearnerDetail.learner_id));
+      setActiveDossierTab('overview');
     }
   }, [selectedLearnerDetail]);
 
@@ -164,6 +176,31 @@ export const InstructorPortalView: React.FC<InstructorPortalViewProps> = ({
     setLearnerNotes(lmsService.getInstructorNotes(selectedLearnerDetail.learner_id));
     setNewNoteText('');
     showToast('Instructor learning note saved.');
+  };
+
+  const handleAddIntervention = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedLearnerDetail || !newInterventionTitle.trim()) return;
+    const created = lmsService.createIntervention({
+      learner_id: selectedLearnerDetail.learner_id,
+      instructor_id: 'inst-001',
+      instructor_name: currentUser.full_name,
+      course_id: selectedLearnerDetail.course_id,
+      type: newInterventionType,
+      title: newInterventionTitle.trim(),
+      description: newInterventionDesc.trim() || 'Instructor intervention created for learner support.',
+      status: 'PENDING'
+    });
+    setLearnerInterventions(prev => [created, ...prev]);
+    setNewInterventionTitle('');
+    setNewInterventionDesc('');
+    showToast(`Created intervention: ${created.title}`);
+  };
+
+  const handleResolveIntervention = (id: string) => {
+    lmsService.resolveIntervention(id);
+    setLearnerInterventions(prev => prev.map(i => i.intervention_id === id ? { ...i, status: 'RESOLVED' as const, resolved_at: new Date().toISOString() } : i));
+    showToast('Intervention marked as resolved');
   };
 
   const handleOpenEvaluationModal = (sub: LMSAssignmentSubmission) => {
@@ -773,10 +810,11 @@ export const InstructorPortalView: React.FC<InstructorPortalViewProps> = ({
         </div>
       )}
 
-      {/* LEARNER DETAIL DRAWER / MODAL (MAJOR REQUIREMENT) */}
+      {/* LEARNER DETAIL DRAWER / MODAL (7-TAB COMPREHENSIVE DOSSIER) */}
       {selectedLearnerDetail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-3xl bg-white dark:bg-[#0B0F19] border border-slate-200 dark:border-slate-800 shadow-2xl p-6 sm:p-8 space-y-6">
+          <div className="w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-3xl bg-white dark:bg-[#0B0F19] border border-slate-200 dark:border-slate-800 shadow-2xl p-6 sm:p-8 space-y-6">
+            {/* Header with Avatar & Identity */}
             <div className="flex items-start justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
               <div className="flex items-center gap-4">
                 <img
@@ -786,7 +824,7 @@ export const InstructorPortalView: React.FC<InstructorPortalViewProps> = ({
                 />
                 <div>
                   <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-emerald-600">
-                    ID: {selectedLearnerDetail.learner_id}
+                    ID: {selectedLearnerDetail.learner_id} • Cohort: {selectedLearnerDetail.batch_name}
                   </div>
                   <h2 className="text-xl font-black text-slate-900 dark:text-white">
                     {selectedLearnerDetail.learner_name}
@@ -802,75 +840,360 @@ export const InstructorPortalView: React.FC<InstructorPortalViewProps> = ({
               </button>
             </div>
 
-            <div className="space-y-5 text-xs">
-              {/* Progress Summary Cards */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <div className="text-[10px] font-mono text-slate-400">Course Progress</div>
-                  <div className="text-xl font-bold text-emerald-600 mt-1">{selectedLearnerDetail.progress_pct}%</div>
-                </div>
-                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <div className="text-[10px] font-mono text-slate-400">Quiz Average</div>
-                  <div className="text-xl font-bold text-slate-900 dark:text-white mt-1">{selectedLearnerDetail.quiz_avg_score}%</div>
-                </div>
-                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <div className="text-[10px] font-mono text-slate-400">Learning Hours</div>
-                  <div className="text-xl font-bold text-slate-900 dark:text-white mt-1">{selectedLearnerDetail.learning_hours}h</div>
-                </div>
-                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <div className="text-[10px] font-mono text-slate-400">Current Grade</div>
-                  <div className="text-xl font-bold text-amber-500 mt-1">{selectedLearnerDetail.final_grade || 'B+'}</div>
-                </div>
-              </div>
-
-              {/* Course Info */}
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-1">
-                <div className="font-bold text-slate-900 dark:text-white">Active Cohort Enrollment</div>
-                <div className="text-slate-600 dark:text-slate-400">{selectedLearnerDetail.course_title} ({selectedLearnerDetail.batch_name})</div>
-                <div className="text-[11px] text-slate-500 font-mono">Enrolled: {selectedLearnerDetail.enrolled_at.substring(0, 10)} • Last Active: {selectedLearnerDetail.last_active_at.substring(0, 10)}</div>
-              </div>
-
-              {/* Private Instructor Notes Section */}
-              <div className="space-y-3 pt-2">
-                <div className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4 text-emerald-600" />
-                  <span>Private Faculty Notes & Remediation Records</span>
-                </div>
-
-                <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {learnerNotes.length === 0 ? (
-                    <div className="text-slate-400 italic text-[11px]">No private notes logged for this learner yet.</div>
-                  ) : (
-                    learnerNotes.map(n => (
-                      <div key={n.note_id} className="p-3 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 text-[11px]">
-                        <div className="font-bold text-amber-900 dark:text-amber-300 flex justify-between">
-                          <span>{n.instructor_name}</span>
-                          <span className="font-mono text-slate-400">{n.created_at.substring(0, 10)}</span>
-                        </div>
-                        <p className="text-slate-700 dark:text-slate-300 mt-1">{n.note_text}</p>
-                      </div>
-                    ))
+            {/* 7-Tab Navigation Bar */}
+            <div className="flex overflow-x-auto gap-1 p-1 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold scrollbar-none">
+              {(
+                [
+                  { id: 'overview', label: 'Overview' },
+                  { id: 'courses', label: 'Courses & Progress' },
+                  { id: 'assessments', label: 'Assessments & Grades' },
+                  { id: 'assignments', label: 'Assignments' },
+                  { id: 'activity', label: 'Learning Activity' },
+                  { id: 'notes', label: 'Instructor Notes' },
+                  { id: 'interventions', label: 'Interventions' }
+                ] as const
+              ).map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveDossierTab(tab.id)}
+                  className={`px-3 py-2 rounded-xl whitespace-nowrap transition cursor-pointer ${
+                    activeDossierTab === tab.id
+                      ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
+                      : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  {tab.label}
+                  {tab.id === 'notes' && learnerNotes.length > 0 && (
+                    <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px]">
+                      {learnerNotes.length}
+                    </span>
                   )}
-                </div>
-
-                <form onSubmit={handleAddNote} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newNoteText}
-                    onChange={(e) => setNewNoteText(e.target.value)}
-                    placeholder="Add private evaluation note or tutoring reminder..."
-                    className="flex-1 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs outline-hidden focus:ring-2 focus:ring-emerald-500"
-                  />
-                  <button
-                    type="submit"
-                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
-                  >
-                    Save Note
-                  </button>
-                </form>
-              </div>
+                  {tab.id === 'interventions' && learnerInterventions.filter(i => i.status !== 'RESOLVED').length > 0 && (
+                    <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px]">
+                      {learnerInterventions.filter(i => i.status !== 'RESOLVED').length}
+                    </span>
+                  )}
+                </button>
+              ))}
             </div>
 
+            {/* TAB CONTENT AREA */}
+            <div className="space-y-5 text-xs min-h-[300px]">
+              {/* TAB 1: OVERVIEW */}
+              {activeDossierTab === 'overview' && (
+                <div className="space-y-4 animate-fade-in">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                    <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                      <div className="text-[10px] font-mono text-slate-400">Course Progress</div>
+                      <div className="text-xl font-bold text-emerald-600 mt-1">{selectedLearnerDetail.progress_pct}%</div>
+                    </div>
+                    <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                      <div className="text-[10px] font-mono text-slate-400">Quiz Average</div>
+                      <div className="text-xl font-bold text-slate-900 dark:text-white mt-1">{selectedLearnerDetail.quiz_avg_score}%</div>
+                    </div>
+                    <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                      <div className="text-[10px] font-mono text-slate-400">Learning Hours</div>
+                      <div className="text-xl font-bold text-slate-900 dark:text-white mt-1">{selectedLearnerDetail.learning_hours}h</div>
+                    </div>
+                    <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                      <div className="text-[10px] font-mono text-slate-400">Current Standing</div>
+                      <div className="text-xl font-bold text-amber-500 mt-1">{selectedLearnerDetail.final_grade || 'B+'}</div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2">
+                    <div className="font-bold text-slate-900 dark:text-white text-sm">Academic Cohort Details</div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-600 dark:text-slate-400">
+                      <div><strong className="text-slate-900 dark:text-white">Active Course:</strong> {selectedLearnerDetail.course_title}</div>
+                      <div><strong className="text-slate-900 dark:text-white">Batch / Cohort:</strong> {selectedLearnerDetail.batch_name}</div>
+                      <div><strong className="text-slate-900 dark:text-white">Enrollment Date:</strong> {selectedLearnerDetail.enrolled_at.substring(0, 10)}</div>
+                      <div><strong className="text-slate-900 dark:text-white">Last Activity:</strong> {selectedLearnerDetail.last_active_at.substring(0, 10)}</div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40 flex items-center justify-between">
+                    <div>
+                      <div className="font-bold text-blue-950 dark:text-blue-300">Quick Faculty Actions</div>
+                      <div className="text-slate-500 text-[11px]">Direct interventions or tutoring adjustments</div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setActiveDossierTab('interventions')}
+                        className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition cursor-pointer"
+                      >
+                        Create Intervention
+                      </button>
+                      <button
+                        onClick={() => setActiveDossierTab('notes')}
+                        className="px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 font-bold transition cursor-pointer"
+                      >
+                        Add Private Note
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: COURSES & PROGRESS */}
+              {activeDossierTab === 'courses' && (
+                <div className="space-y-4 animate-fade-in">
+                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-3">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h4 className="font-bold text-slate-900 dark:text-white text-sm">{selectedLearnerDetail.course_title}</h4>
+                        <div className="text-slate-500 text-[11px] font-mono">Curriculum Track • Course ID: {selectedLearnerDetail.course_id}</div>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-[#00E599] font-bold text-[11px]">
+                        {selectedLearnerDetail.status}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between text-xs text-slate-500">
+                        <span>Syllabus Completion</span>
+                        <span className="font-bold text-slate-900 dark:text-white">{selectedLearnerDetail.progress_pct}%</span>
+                      </div>
+                      <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-emerald-500 to-[#00E599]"
+                          style={{ width: `${selectedLearnerDetail.progress_pct}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2 border-t border-slate-200 dark:border-slate-800 text-[11px]">
+                      <div><span className="text-slate-400">Chapters:</span> 15 NISM Chapters</div>
+                      <div><span className="text-slate-400">Completed Modules:</span> {Math.round((selectedLearnerDetail.progress_pct / 100) * 15)} / 15</div>
+                      <div><span className="text-slate-400">Certificate Status:</span> {selectedLearnerDetail.progress_pct >= 100 ? '✅ Issued' : '⏳ Pending Completion'}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: ASSESSMENTS & GRADES */}
+              {activeDossierTab === 'assessments' && (
+                <div className="space-y-4 animate-fade-in">
+                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold text-slate-900 dark:text-white text-sm">Competency & Topic Breakdown</h4>
+                      <span className="font-mono text-emerald-600 font-bold">Overall Average: {selectedLearnerDetail.quiz_avg_score}%</span>
+                    </div>
+
+                    <div className="space-y-2.5 pt-1">
+                      {[
+                        { topic: 'Securities Markets & Regulatory Framework', score: Math.min(100, selectedLearnerDetail.quiz_avg_score + 4) },
+                        { topic: 'Fundamental & Technical Analysis', score: selectedLearnerDetail.quiz_avg_score },
+                        { topic: 'Valuation & Corporate Finance Models', score: Math.max(50, selectedLearnerDetail.quiz_avg_score - 8) },
+                        { topic: 'Derivatives, Options Greeks & Risk Architecture', score: Math.max(45, selectedLearnerDetail.quiz_avg_score - 14) }
+                      ].map((item, idx) => (
+                        <div key={idx} className="space-y-1">
+                          <div className="flex justify-between text-[11px]">
+                            <span className="text-slate-700 dark:text-slate-300">{item.topic}</span>
+                            <span className={`font-mono font-bold ${item.score < 65 ? 'text-rose-500' : 'text-slate-900 dark:text-white'}`}>{item.score}%</span>
+                          </div>
+                          <div className="h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                            <div 
+                              className={`h-full ${item.score < 65 ? 'bg-rose-500' : 'bg-emerald-500'}`}
+                              style={{ width: `${item.score}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 4: ASSIGNMENTS & SUBMISSIONS */}
+              {activeDossierTab === 'assignments' && (
+                <div className="space-y-3 animate-fade-in">
+                  {(() => {
+                    const studentSubs = lmsService.getLearnerSubmissions(selectedLearnerDetail.learner_id);
+                    if (studentSubs.length === 0) {
+                      return (
+                        <div className="p-6 text-center text-slate-400 italic rounded-2xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800">
+                          No assignment submissions recorded for this learner yet.
+                        </div>
+                      );
+                    }
+                    return studentSubs.map((sub) => (
+                      <div key={sub.submission_id} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h5 className="font-bold text-slate-900 dark:text-white text-sm">{sub.assignment_title}</h5>
+                            <div className="text-[11px] text-slate-500 font-mono">Submitted: {sub.submitted_at.substring(0, 10)}</div>
+                          </div>
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${sub.status === 'GRADED' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'}`}>
+                            {sub.status === 'GRADED' ? `Score: ${sub.score}/100` : 'Pending Evaluation'}
+                          </span>
+                        </div>
+                        {sub.instructor_feedback && (
+                          <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] text-slate-700 dark:text-slate-300">
+                            <strong>Faculty Feedback:</strong> {sub.instructor_feedback}
+                          </div>
+                        )}
+                      </div>
+                    ));
+                  })()}
+                </div>
+              )}
+
+              {/* TAB 5: LEARNING ACTIVITY */}
+              {activeDossierTab === 'activity' && (
+                <div className="space-y-2.5 animate-fade-in max-h-72 overflow-y-auto">
+                  {(() => {
+                    const studentEvents = lmsService.getLearnerActivity(selectedLearnerDetail.learner_id);
+                    if (studentEvents.length === 0) {
+                      return (
+                        <div className="p-6 text-center text-slate-400 italic rounded-2xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800">
+                          No learning activity events logged for this learner.
+                        </div>
+                      );
+                    }
+                    return studentEvents.map((evt) => (
+                      <div key={evt.event_id} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-[11px] space-y-1">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-slate-900 dark:text-white">{evt.title}</span>
+                          <span className="font-mono text-slate-400 text-[10px]">{evt.timestamp.substring(0, 10)}</span>
+                        </div>
+                        <p className="text-slate-600 dark:text-slate-400">{evt.description}</p>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              )}
+
+              {/* TAB 6: INSTRUCTOR NOTES */}
+              {activeDossierTab === 'notes' && (
+                <div className="space-y-3 animate-fade-in">
+                  <div className="text-slate-500 text-[11px]">
+                    Private notes are confidential to accredited instructors and are never visible to learners or unauthorized users.
+                  </div>
+
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {learnerNotes.length === 0 ? (
+                      <div className="text-slate-400 italic text-[11px] p-4 text-center rounded-xl bg-slate-50 dark:bg-slate-900">
+                        No private notes recorded for this learner yet.
+                      </div>
+                    ) : (
+                      learnerNotes.map((n) => (
+                        <div key={n.note_id} className="p-3 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 text-[11px]">
+                          <div className="font-bold text-amber-900 dark:text-amber-300 flex justify-between">
+                            <span>{n.instructor_name}</span>
+                            <span className="font-mono text-slate-400">{n.created_at.substring(0, 10)}</span>
+                          </div>
+                          <p className="text-slate-700 dark:text-slate-300 mt-1">{n.note_text}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  <form onSubmit={handleAddNote} className="flex gap-2 pt-2">
+                    <input
+                      type="text"
+                      value={newNoteText}
+                      onChange={(e) => setNewNoteText(e.target.value)}
+                      placeholder="Add private evaluation note or tutoring reminder..."
+                      className="flex-1 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs outline-hidden focus:ring-2 focus:ring-emerald-500"
+                    />
+                    <button
+                      type="submit"
+                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
+                    >
+                      Save Note
+                    </button>
+                  </form>
+                </div>
+              )}
+
+              {/* TAB 7: INTERVENTIONS & REMEDIATION */}
+              {activeDossierTab === 'interventions' && (
+                <div className="space-y-3 animate-fade-in">
+                  <div className="text-slate-500 text-[11px]">
+                    Log targeted faculty interventions, tutoring sessions, and remediation workflows for struggling learners.
+                  </div>
+
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {learnerInterventions.length === 0 ? (
+                      <div className="text-slate-400 italic text-[11px] p-4 text-center rounded-xl bg-slate-50 dark:bg-slate-900">
+                        No active interventions recorded for this learner.
+                      </div>
+                    ) : (
+                      learnerInterventions.map((intv) => (
+                        <div key={intv.intervention_id} className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-[11px] space-y-1.5">
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                              <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold text-[10px]">
+                                {intv.type}
+                              </span>
+                              <span className="font-bold text-slate-900 dark:text-white">{intv.title}</span>
+                            </div>
+                            {intv.status === 'RESOLVED' ? (
+                              <span className="text-emerald-600 font-bold text-[10px] flex items-center gap-1">
+                                <Check className="w-3 h-3" /> Resolved
+                              </span>
+                            ) : (
+                              <button
+                                onClick={() => handleResolveIntervention(intv.intervention_id)}
+                                className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] transition cursor-pointer"
+                              >
+                                Mark Resolved
+                              </button>
+                            )}
+                          </div>
+                          <p className="text-slate-600 dark:text-slate-400">{intv.description}</p>
+                          <div className="text-[10px] text-slate-400 font-mono">
+                            Logged by {intv.instructor_name} on {intv.created_at.substring(0, 10)}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Add Intervention Form */}
+                  <form onSubmit={handleAddIntervention} className="p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2 pt-2">
+                    <div className="font-bold text-slate-900 dark:text-white text-xs">Create New Intervention</div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <select
+                        value={newInterventionType}
+                        onChange={(e) => setNewInterventionType(e.target.value as any)}
+                        className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-hidden"
+                      >
+                        <option value="TUTORING">1-on-1 Tutoring</option>
+                        <option value="REMEDIAL_QUIZ">Remedial Valuation Drill</option>
+                        <option value="DEADLINE_EXTENSION">Assignment Extension</option>
+                        <option value="DIFFICULTY_FLAG">Flag Learning Difficulty</option>
+                      </select>
+                      <input
+                        type="text"
+                        required
+                        value={newInterventionTitle}
+                        onChange={(e) => setNewInterventionTitle(e.target.value)}
+                        placeholder="Intervention title..."
+                        className="sm:col-span-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-hidden"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newInterventionDesc}
+                        onChange={(e) => setNewInterventionDesc(e.target.value)}
+                        placeholder="Specific remediation instructions or learning gap notes..."
+                        className="flex-1 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-hidden"
+                      />
+                      <button
+                        type="submit"
+                        className="px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition cursor-pointer"
+                      >
+                        Create
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
             <div className="flex justify-end pt-3 border-t border-slate-100 dark:border-slate-800">
               <button
                 onClick={() => setSelectedLearnerDetail(null)}

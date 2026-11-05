@@ -11,6 +11,7 @@ import {
   LMSAssignment, 
   LMSAssignmentSubmission, 
   InstructorPrivateNote,
+  InstructorIntervention,
   LearnerActivityEvent 
 } from '../types/schema';
 
@@ -650,6 +651,46 @@ export const SEED_ACTIVITY_EVENTS: LearnerActivityEvent[] = [
     title: 'Course Completed & Certificate Issued',
     description: 'Earned official Certificate FX-CERT-2026-0814 with Grade A+.',
     timestamp: '2026-10-30T17:00:00Z'
+  }
+];
+
+export const SEED_INTERVENTIONS: InstructorIntervention[] = [
+  {
+    intervention_id: 'intv-001',
+    learner_id: 'learner-003',
+    instructor_id: 'inst-001',
+    instructor_name: 'Dr. R. Subramanian',
+    course_id: 3,
+    type: 'DIFFICULTY_FLAG',
+    title: 'Bond Pricing Day-Count Remediation',
+    description: 'Learner is scoring <60% on 30/360 day-count convention drills. Flagged for review.',
+    status: 'PENDING',
+    created_at: '2026-11-04T09:35:00Z'
+  },
+  {
+    intervention_id: 'intv-002',
+    learner_id: 'learner-003',
+    instructor_id: 'inst-001',
+    instructor_name: 'Dr. R. Subramanian',
+    course_id: 3,
+    type: 'REMEDIAL_QUIZ',
+    title: 'Assigned Remedial Valuation Drill',
+    description: 'Custom AI-generated practice set on dirty price accrued interest calculation.',
+    status: 'SCHEDULED',
+    created_at: '2026-11-04T10:00:00Z'
+  },
+  {
+    intervention_id: 'intv-003',
+    learner_id: 'learner-001',
+    instructor_id: 'inst-001',
+    instructor_name: 'Dr. R. Subramanian',
+    course_id: 3,
+    type: 'ONE_ON_ONE',
+    title: 'Advanced Financial Modeling Mentorship',
+    description: 'Scheduled institutional honors discussion on DCF terminal growth assumptions.',
+    status: 'RESOLVED',
+    created_at: '2026-11-02T14:00:00Z',
+    resolved_at: '2026-11-03T16:00:00Z'
   }
 ];
 
