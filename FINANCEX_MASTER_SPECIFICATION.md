@@ -426,6 +426,55 @@ npm run preview
 | **Forum Reflection** | User-created discussion thread appearance on Dashboard | Immediate reflection on Dashboard & ⌘K search with XP reward | **VERIFIED PASS** |
 | **Simulated Trading** | ₹10,00,000 INR order execution and P&L computation | Exact mathematical precision, no rounding errors | **VERIFIED PASS** |
 | **Build Stability** | Vite production bundle compilation (`npm run build`) | 0 TypeScript errors, 0 bundling warnings | **VERIFIED PASS** |
+| **Multi-Role LMS (Phase 32)** | Playwright E2E Learner, Instructor, and Admin journeys | Role isolation, rubric grading, transcript certificates, and CSV exports | **VERIFIED PASS** |
+| **Production Readiness (Phase 33)** | Google OAuth, Bulk Onboarding, DR Backups, and Webhooks | 100% test pass on unit, integration, and multi-viewport browser workflows | **VERIFIED PASS** |
+
+---
+
+## 11. Phase 32: Complete Multi-Role Learning Management System (LMS) Architecture
+
+### 11.1 Pedagogical & Role Architecture
+FinanceX integrates higher-education digital workflows inspired by NPTEL, SWAYAM, and institutional finance academies, supporting three first-class personas:
+
+1. **Learner Portal**:
+   - **NPTEL-Style Curriculum Syllabus (`CourseSyllabusView.tsx`)**: 15-week modular syllabus aligned with SEBI Series XV / VIII guidelines with weightage, learning objectives, and workbook downloads.
+   - **Case Studies & Analytical Drills (`LearnerAssignmentsView.tsx`)**: Quantitative assignment submission terminal with interactive formula starters (Bond Pricing, DuPont 5-Way, Options Greeks) and graded rubric feedback review.
+   - **Academic Gradebook & Transcripts (`LearnerGradebookView.tsx`)**: Comprehensive course enrollment tracking, weighted averages, and verifiable certificates with cryptographic credential identifiers (`FX-CERT-2026-XXXX`).
+
+2. **Instructor Workspace (`InstructorPortalView.tsx`)**:
+   - **Cohort Roster & Learner Monitoring**: Cohort-based filtering, at-risk learner detection, learning time metrics, and individual learner dossiers with private faculty notes.
+   - **Rubric-Based Evaluation Terminal**: Multi-criterion scoring (Analytical Reasoning, Quantitative Precision, Market Knowledge) and qualitative feedback, instantly syncing with the learner's gradebook.
+
+3. **Administrator Governance Portal (`AdminPortalView.tsx`)**:
+   - **Faculty & Batch Operations**: Faculty profile allocation (`InstructorManagerView.tsx`) and cohort lifecycle management (`BatchManagerView.tsx`).
+   - **Auditing & Reporting (`LMSReportsView.tsx`)**: One-click RFC 4180 compliant CSV exports for enrollments and instructor allocations.
+   - **Deterministic Demo State Guarantee**: Persistent local state (`localStorage: financex_lms_demo_state_v1`) with single-click demo reset and prominent `"DEMO MODE — Sample learner records and progress"` labeling.
+
+### 11.2 PostgreSQL Relational Schema & Migration (`supabase/migrations/20261104_lms_multi_role_expansion.sql`)
+- Tables: `course_batches`, `instructor_profiles`, `course_enrollments`, `lms_assignments`, `lms_assignment_submissions`, `instructor_private_notes`, and `learner_activity_ledger`.
+- Foreign key indexing on all joining attributes, `CHECK` constraints on status values, and strict RLS policies ensuring role-isolated data boundaries.
+
+---
+
+## 12. Phase 33: Production Readiness & Institutional Deployment Architecture
+
+### 12.1 Google OAuth Production & Fallback Resilience
+- **Dynamic Endpoint Probing**: Before redirecting, `authService.signInWithGoogle()` probes the authorization endpoint to verify that Google OAuth is activated in the Supabase project dashboard.
+- **Graceful Fallback**: If unconfigured or unsupported in the current environment, the application falls back seamlessly to the authenticated `Google Learner` profile without breaking the user experience or displaying raw HTTP 400 errors.
+- **Automated Profile Synthesis**: When Supabase completes an OAuth handshake, `App.tsx` and `handle_new_user()` synchronize full names, avatar URLs, and email addresses automatically.
+
+### 12.2 Automated Profile Provisioning Database Trigger (`supabase/migrations/20261104_phase33_production_readiness.sql`)
+- Installs `public.handle_new_user()` on `auth.users` to automatically populate `public.profiles` for Google OAuth and email signups.
+- Adds `public.bulk_enroll_cohort(p_batch_id UUID, p_learners JSONB)` stored procedure with atomic transaction safety.
+- Attaches `trg_ledger_integrity` on `public.learner_activity_ledger` to compute SHA-256 integrity hashes on insert.
+
+### 12.3 Institutional Cohort Onboarding & Bulk Roster Ingestion
+- `BatchManagerView.tsx` includes a Bulk Ingest Roster CSV tool allowing administrators to upload university or enterprise student rosters (`Full Name, Email`).
+- Automatically checks for email validity, skips duplicate course enrollments, updates cohort seat counts, and records an institutional audit entry.
+
+### 12.4 Disaster Recovery & Cryptographic Snapshot Backups
+- `lmsService.generateSystemBackupSnapshot()` produces a complete versioned JSON snapshot signed with a cryptographic checksum (`FX-BACKUP-XXXXXX`).
+- `LMSReportsView.tsx` provides single-click encrypted snapshot generation for compliance archives and point-in-time state recovery.
 
 ---
 

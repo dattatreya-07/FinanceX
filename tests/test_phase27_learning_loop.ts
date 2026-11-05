@@ -99,7 +99,7 @@ async function runTests() {
   const masteryWithStrength = learningLoopService.computeConceptMastery('user-101', {
     quizAttempts: strongQuizAttempts,
     mockAttempts: strongMockAttempts,
-    completedLessonIds: [2, 3], // Option Greeks lessons
+    completedLessonIds: [2, 3, 103], // Option Greeks lessons (all 3 completed for topic 3)
     allTopics: MOCK_TOPICS,
     allLessons: MOCK_LESSONS
   });

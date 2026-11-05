@@ -28,7 +28,9 @@ import {
   LogOut,
   Globe,
   Smartphone,
-  Download
+  Download,
+  GraduationCap,
+  FileText
 } from 'lucide-react';
 import { FinanceXLogo } from '../brand/FinanceXLogo';
 import { AppNavView, User, Notification } from '../../types/schema';
@@ -39,6 +41,7 @@ import { ThemeToggle } from './ThemeToggle';
 import { LanguageSelector } from './LanguageSelector';
 import { FloatingRadialMenu } from './FloatingRadialMenu';
 import { FloatingAITutorWidget } from '../aiTutor/FloatingAITutorWidget';
+import { RoleSwitcherCapsule } from './RoleSwitcherCapsule';
 
 interface AppShellProps {
   currentView: AppNavView;
@@ -50,6 +53,7 @@ interface AppShellProps {
   onOpenAuth: () => void;
   onSignOut?: () => void;
   onOpenInstall?: () => void;
+  onRoleChanged?: (updatedUser: User) => void;
   children: React.ReactNode;
 }
 
@@ -63,6 +67,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   onOpenAuth,
   onSignOut,
   onOpenInstall,
+  onRoleChanged,
   children
 }) => {
   const { t } = useTranslation('navigation');
@@ -77,6 +82,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
   const isAdmin = adminService.hasAdminPrivileges(user);
+  const isInstructor = user.role?.toUpperCase() === 'INSTRUCTOR' || isAdmin;
 
   // Close all popovers on route / view changes
   useEffect(() => {
@@ -155,6 +161,9 @@ export const AppShell: React.FC<AppShellProps> = ({
       { id: 'dashboard' as AppNavView, label: t('dashboard'), icon: <LayoutDashboard className="w-4 h-4" /> },
       { id: 'learn' as AppNavView, label: t('active_lesson'), icon: <BookOpen className="w-4 h-4" /> },
       { id: 'courses' as AppNavView, label: t('course_catalog'), icon: <Compass className="w-4 h-4" /> },
+      { id: 'syllabus' as AppNavView, label: 'Course Syllabus', icon: <BookOpen className="w-4 h-4 text-emerald-400" /> },
+      { id: 'assignments' as AppNavView, label: 'Case Studies & Tasks', icon: <FileText className="w-4 h-4 text-emerald-400" />, badge: 'LMS' },
+      { id: 'gradebook' as AppNavView, label: 'Gradebook & Transcripts', icon: <Award className="w-4 h-4 text-amber-400" /> },
       { id: 'certifications' as AppNavView, label: t('certifications_hub'), icon: <Award className="w-4 h-4" /> },
       { id: 'study-plans' as AppNavView, label: t('study_plans'), icon: <CalendarDays className="w-4 h-4" /> },
     ]},
@@ -175,6 +184,7 @@ export const AppShell: React.FC<AppShellProps> = ({
       { id: 'achievements' as AppNavView, label: t('achievements_gallery'), icon: <Trophy className="w-4 h-4" /> },
     ]},
     { section: t('system_and_blueprint'), items: [
+      { id: 'instructor' as AppNavView, label: 'Instructor Portal', icon: <GraduationCap className="w-4 h-4 text-cyan-400" />, badge: 'FACULTY', instructorOnly: true },
       { id: 'admin' as AppNavView, label: 'Admin CMS & LMS', icon: <ShieldCheck className="w-4 h-4 text-orange-400 dark:text-orange-600" />, badge: 'ADMIN', adminOnly: true },
       { id: 'notifications' as AppNavView, label: t('notifications'), icon: <Bell className="w-4 h-4" />, count: unreadNotificationsCount },
       { id: 'profile' as AppNavView, label: t('learner_profile'), icon: <UserIcon className="w-4 h-4" /> },
@@ -183,10 +193,14 @@ export const AppShell: React.FC<AppShellProps> = ({
     ]}
   ];
 
-  // Role-based visibility: Filter out admin-only items if user does not have admin permissions
+  // Role-based visibility: Filter out admin-only and instructor-only items based on authorization
   const navItems = rawNavItems.map(group => ({
     ...group,
-    items: group.items.filter(item => !(item as any).adminOnly || isAdmin)
+    items: group.items.filter(item => {
+      if ((item as any).adminOnly && !isAdmin) return false;
+      if ((item as any).instructorOnly && !isInstructor) return false;
+      return true;
+    })
   })).filter(group => group.items.length > 0);
 
   return (
@@ -212,7 +226,7 @@ export const AppShell: React.FC<AppShellProps> = ({
           <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
             <button
               onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}
-              className="lg:hidden p-1 sm:p-1.5 text-white/90 hover:text-white rounded-lg hover:bg-white/20 transition cursor-pointer"
+              className="p-1 sm:p-1.5 text-white/90 hover:text-white rounded-lg hover:bg-white/20 transition cursor-pointer"
               aria-label="Toggle Navigation Drawer"
             >
               {isMobileNavOpen ? <X className="w-4.5 h-4.5 sm:w-5 sm:h-5" /> : <Menu className="w-4.5 h-4.5 sm:w-5 sm:h-5" />}
@@ -351,6 +365,13 @@ export const AppShell: React.FC<AppShellProps> = ({
               )}
             </div>
 
+            {/* Institutional Role Switcher Capsule */}
+            <RoleSwitcherCapsule 
+              currentUser={user} 
+              onRoleChanged={onRoleChanged || (() => {})} 
+              onNavigate={onNavigate} 
+            />
+
             {/* User Profile Dropdown */}
             <div className="relative" ref={profileMenuRef}>
               <button
@@ -388,6 +409,23 @@ export const AppShell: React.FC<AppShellProps> = ({
                   <UserIcon className="w-3.5 h-3.5" />
                   <span>Profile & Certificates</span>
                 </button>
+                {isInstructor && (
+                  <button
+                    onClick={() => {
+                      onNavigate('instructor');
+                      setIsProfileMenuOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-lg hover:bg-cyan-50 dark:hover:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 font-bold transition flex items-center justify-between cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <GraduationCap className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+                      <span>Instructor Portal</span>
+                    </span>
+                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-cyan-100 dark:bg-cyan-900/40 text-cyan-800 dark:text-cyan-300">
+                      FACULTY
+                    </span>
+                  </button>
+                )}
                 {adminService.hasAdminPrivileges(user) && (
                   <button
                     onClick={() => {
@@ -463,9 +501,9 @@ export const AppShell: React.FC<AppShellProps> = ({
       </div>
     </header>
 
-      {/* Mobile Navigation Drawer Overlay */}
+      {/* Navigation Drawer Overlay */}
       {isMobileNavOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex">
+        <div className="fixed inset-0 z-50 flex">
           <div 
             onClick={() => setIsMobileNavOpen(false)}
             className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity" 
@@ -541,6 +579,24 @@ export const AppShell: React.FC<AppShellProps> = ({
       <div className="flex-1 flex overflow-hidden w-full">
         {/* Main Content Area (Dynamic Workspace - Full Width) */}
         <main className="flex-1 h-full overflow-y-auto bg-[#FAFAFA] dark:bg-[#07090E] p-3 sm:p-5 lg:p-6 w-full theme-transition">
+          {/* Centralized Demo Mode Banner Indicator (Sandbox / Evaluation Only) */}
+          {user.isDemoUser && (
+            <div className="mx-auto w-full max-w-7xl mb-4 px-3 sm:px-4 py-2 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-xs font-mono flex items-center justify-between shadow-2xs">
+              <div className="flex items-center gap-2 truncate">
+                <ShieldCheck className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                <span className="font-bold">DEMO MODE</span>
+                <span className="hidden sm:inline text-amber-700/80 dark:text-amber-400/80">
+                  — Sample learner records and progress. Shared multi-role reactive state active.
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-400/20 text-amber-800 dark:text-amber-200">
+                  ACTIVE ROLE: {user.role || 'USER'}
+                </span>
+              </div>
+            </div>
+          )}
+
           <div className="w-full">
             {children}
           </div>

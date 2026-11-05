@@ -77,6 +77,11 @@ import { FinancialCalculatorsView } from './components/tools/FinancialCalculator
 import { CompetitiveArenaView } from './components/arena/CompetitiveArenaView';
 import { AdminPortalView } from './components/admin/AdminPortalView';
 import { ArgusFinPortalView } from './components/external/ArgusFinPortalView';
+import { InstructorPortalView } from './components/instructor/InstructorPortalView';
+import { LearnerAssignmentsView } from './components/learn/LearnerAssignmentsView';
+import { LearnerGradebookView } from './components/learn/LearnerGradebookView';
+import { CourseSyllabusView } from './components/learn/CourseSyllabusView';
+import { UnauthorizedRoleView } from './components/layout/UnauthorizedRoleView';
 
 const INITIAL_FRESH_USER: User = {
   user_id: 'guest',
@@ -287,7 +292,30 @@ export default function App() {
       const session = await authService.getSession();
       if (session?.user) {
         setIsAuthenticated(true);
-        const profile = await authService.getProfile(session.user.id);
+        let profile = await authService.getProfile(session.user.id);
+        
+        // Robust profile synthesis from OAuth / session metadata if database row is initializing
+        if (!profile && session.user) {
+          profile = {
+            user_id: session.user.id,
+            email: session.user.email || '',
+            full_name: (session.user as any).user_metadata?.full_name || 
+                       (session.user as any).user_metadata?.name || 
+                       session.user.email?.split('@')[0] || 'Learner',
+            phone_number: (session.user as any).phone || '',
+            account_status: 'ACTIVE',
+            role: ((session.user as any).app_metadata?.role as any) || 'USER',
+            knowledge_level_id: 1,
+            current_streak: 0,
+            longest_streak: 0,
+            xp_points: 0,
+            isDemoUser: false,
+            avatar_url: (session.user as any).user_metadata?.avatar_url || (session.user as any).user_metadata?.picture,
+            social_links: []
+          };
+          authService.setLocalActiveSession(profile);
+        }
+
         if (profile) {
           setUser(profile);
           const saved = authService.loadUserData(profile.email);
@@ -308,7 +336,30 @@ export default function App() {
     const sub = authService.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
         setIsAuthenticated(true);
-        const profile = await authService.getProfile(session.user.id);
+        let profile = await authService.getProfile(session.user.id);
+
+        // Robust profile synthesis upon OAuth redirect (e.g. Google OAuth callback)
+        if (!profile && session.user) {
+          profile = {
+            user_id: session.user.id,
+            email: session.user.email || '',
+            full_name: (session.user as any).user_metadata?.full_name || 
+                       (session.user as any).user_metadata?.name || 
+                       session.user.email?.split('@')[0] || 'Learner',
+            phone_number: (session.user as any).phone || '',
+            account_status: 'ACTIVE',
+            role: ((session.user as any).app_metadata?.role as any) || 'USER',
+            knowledge_level_id: 1,
+            current_streak: 0,
+            longest_streak: 0,
+            xp_points: 0,
+            isDemoUser: false,
+            avatar_url: (session.user as any).user_metadata?.avatar_url || (session.user as any).user_metadata?.picture,
+            social_links: []
+          };
+          authService.setLocalActiveSession(profile);
+        }
+
         if (profile) {
           setUser(profile);
           const saved = authService.loadUserData(profile.email);
@@ -664,7 +715,7 @@ export default function App() {
 
     if (userData.isDemoUser) {
       const demoRole = userData.role || (userData.email.includes('admin') ? 'ADMIN' : 'USER');
-      setUser({ ...MOCK_CURRENT_USER, role: demoRole });
+      setUser({ ...MOCK_CURRENT_USER, role: demoRole, isDemoUser: true });
       setDemoAccount(MOCK_DEMO_ACCOUNT);
       setHoldings(MOCK_DEMO_HOLDINGS);
       setTransactions(MOCK_DEMO_TRANSACTIONS);
@@ -682,7 +733,7 @@ export default function App() {
 
     const saved = authService.loadUserData(userData.email);
     if (saved && !userData.isNewUser) {
-      const userWithRole = { ...saved.user, role: saved.user.role || (userData.email.includes('admin') ? 'ADMIN' : 'USER') };
+      const userWithRole = { ...saved.user, role: saved.user.role || (userData.email.includes('admin') ? 'ADMIN' : 'USER'), isDemoUser: false };
       setUser(userWithRole);
       setDemoAccount(saved.demoAccount || INITIAL_FRESH_DEMO_ACCOUNT);
       setHoldings(saved.holdings || []);
@@ -705,6 +756,7 @@ export default function App() {
         phone_number: '',
         account_status: 'ACTIVE',
         role: assignedRole,
+        isDemoUser: false,
         knowledge_level_id: 1,
         current_streak: 0,
         longest_streak: 0,
@@ -1321,6 +1373,51 @@ export default function App() {
           />
         );
 
+      case 'instructor':
+        return (user.role?.toUpperCase() === 'INSTRUCTOR' || adminService.hasAdminPrivileges(user)) ? (
+          <InstructorPortalView
+            currentUser={user}
+            onNavigate={handleNavigate}
+          />
+        ) : (
+          <UnauthorizedRoleView
+            currentUser={user}
+            requiredRole="INSTRUCTOR"
+            onNavigate={handleNavigate}
+            onRoleChanged={setUser}
+          />
+        );
+
+      case 'assignments':
+        return (
+          <LearnerAssignmentsView
+            currentUser={user}
+            onNavigate={handleNavigate}
+          />
+        );
+
+      case 'gradebook':
+        return (
+          <LearnerGradebookView
+            currentUser={user}
+            onNavigate={handleNavigate}
+          />
+        );
+
+      case 'syllabus':
+        return (
+          <CourseSyllabusView
+            course={activeCourse || courses[0]}
+            lessons={lessons}
+            currentUser={user}
+            onNavigate={handleNavigate}
+            onSelectLesson={(lesson) => {
+              setActiveLesson(lesson);
+              handleNavigate('learn');
+            }}
+          />
+        );
+
       case 'admin':
         return (
           <AdminPortalView
@@ -1437,24 +1534,14 @@ export default function App() {
             onOpenAuth={handleOpenSignIn}
             onSignOut={handleSignOut}
             onOpenInstall={() => setIsInstallModalOpen(true)}
+            onRoleChanged={setUser}
           >
-            <div className="p-8 max-w-xl mx-auto text-center space-y-4 rounded-3xl bg-white dark:bg-[#0B0F19] border border-rose-200 dark:border-rose-900/40 shadow-xl my-12">
-              <div className="w-14 h-14 rounded-2xl bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
-                <ShieldAlert className="w-7 h-7" />
-              </div>
-              <h2 className="text-xl font-display font-black text-slate-900 dark:text-white">
-                Administrative Access Required
-              </h2>
-              <p className="text-xs text-slate-600 dark:text-slate-400">
-                Your account ({user.email}) does not have administrative permissions to access the LMS & CMS Management Portal.
-              </p>
-              <button
-                onClick={() => handleNavigate('dashboard')}
-                className="px-5 py-2.5 rounded-xl bg-[#FF2E7E] text-white font-bold text-xs shadow-md cursor-pointer"
-              >
-                Return to Learner Dashboard
-              </button>
-            </div>
+            <UnauthorizedRoleView
+              currentUser={user}
+              requiredRole="ADMIN"
+              onNavigate={handleNavigate}
+              onRoleChanged={setUser}
+            />
           </AppShell>
         )
       ) : (
@@ -1469,6 +1556,7 @@ export default function App() {
           onOpenAuth={handleOpenSignIn}
           onSignOut={handleSignOut}
           onOpenInstall={() => setIsInstallModalOpen(true)}
+          onRoleChanged={setUser}
         >
           {renderCurrentView()}
         </AppShell>

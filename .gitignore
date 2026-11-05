@@ -12,3 +12,9 @@ __pycache__/
 supabase/.temp/
 *.zip
 /*.mp4
+test-results/
+.aider-desk/
+.claude/
+/.agents/
+/data/
+skills-lock.json

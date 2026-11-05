@@ -36,6 +36,8 @@ export interface User {
   headline?: string;
   bio?: string;
   organization?: string;
+  institution_id?: string;
+  isDemoUser?: boolean;
   target_certifications?: string[];
   uploaded_certificates?: UploadedUserCertificate[];
 }
@@ -524,7 +526,11 @@ export type AppNavView =
   | 'arena'
   | 'figma-blueprint'
   | 'admin'
-  | 'argus-fin';
+  | 'argus-fin'
+  | 'instructor'
+  | 'assignments'
+  | 'gradebook'
+  | 'syllabus';
 
 // Phase 27: Production Intelligence & Adaptive Learning Loop
 export type MasteryLevel = 'NOT_STARTED' | 'LEARNING' | 'NEEDS_PRACTICE' | 'PROFICIENT' | 'MASTERED';
@@ -856,3 +862,153 @@ export interface ComplianceDossierEntry {
   status: 'AUDIT_READY' | 'IN_TRAINING' | 'AT_RISK';
   last_activity_date: string;
 }
+
+// ==========================================
+// Phase 32: Complete Multi-Role LMS Architecture
+// ==========================================
+
+export interface CourseBatch {
+  batch_id: string;
+  batch_name: string;
+  course_id: number;
+  course_title: string;
+  instructor_id: string | number;
+  instructor_name: string;
+  start_date: string;
+  end_date: string;
+  capacity: number;
+  enrolled_count: number;
+  status: 'UPCOMING' | 'ACTIVE' | 'COMPLETED';
+}
+
+export interface InstructorProfile {
+  instructor_id: string | number;
+  user_id: string | number;
+  full_name: string;
+  email: string;
+  title: string;
+  organization: string;
+  bio: string;
+  avatar_url: string;
+  assigned_course_ids: number[];
+  active_cohorts_count: number;
+  total_students_mentored: number;
+  rating: number;
+  status: 'ACTIVE' | 'INACTIVE';
+}
+
+export interface CourseEnrollmentRecord {
+  enrollment_id: string;
+  learner_id: string | number;
+  learner_name: string;
+  learner_email: string;
+  learner_avatar?: string;
+  course_id: number;
+  course_title: string;
+  batch_id: string;
+  batch_name: string;
+  enrolled_at: string;
+  status: 'ACTIVE' | 'COMPLETED' | 'AT_RISK' | 'DROPPED';
+  progress_pct: number;
+  lessons_completed: number;
+  total_lessons: number;
+  quizzes_taken: number;
+  quiz_avg_score: number;
+  assignments_submitted: number;
+  total_assignments: number;
+  assignment_avg_score: number;
+  learning_hours: number;
+  last_active_at: string;
+  attendance_pct?: number;
+  final_grade?: string;
+  certificate_id?: string;
+}
+
+export interface AssignmentRubricItem {
+  criterion: string;
+  max_points: number;
+  description: string;
+}
+
+export interface LMSAssignment {
+  assignment_id: string;
+  course_id: number;
+  module_week: number;
+  title: string;
+  description: string;
+  rubric: AssignmentRubricItem[];
+  max_score: number;
+  due_date: string;
+  estimated_minutes: number;
+  starter_financial_data?: {
+    model_type: string;
+    scenario: string;
+    provided_inputs?: Record<string, any>;
+  };
+  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+}
+
+export interface LMSAssignmentSubmission {
+  submission_id: string;
+  assignment_id: string;
+  assignment_title: string;
+  course_id: number;
+  course_title: string;
+  learner_id: string | number;
+  learner_name: string;
+  learner_email: string;
+  batch_id: string;
+  submitted_at: string;
+  status: 'SUBMITTED' | 'GRADED' | 'REVISION_REQUESTED';
+  content_text: string;
+  quantitative_work?: {
+    assumptions?: Record<string, any>;
+    calculated_metrics?: Record<string, any>;
+    financial_model_output?: string;
+  };
+  score?: number;
+  max_score: number;
+  evaluated_at?: string;
+  evaluator_instructor_id?: string | number;
+  evaluator_name?: string;
+  instructor_feedback?: string;
+  rubric_scores?: Record<string, number>;
+}
+
+export interface LearnerActivityEvent {
+  event_id: string;
+  learner_id: string | number;
+  learner_name: string;
+  course_id?: number;
+  course_title?: string;
+  type: 'LESSON_COMPLETE' | 'QUIZ_ATTEMPT' | 'ASSIGNMENT_SUBMIT' | 'ASSIGNMENT_GRADED' | 'ENROLLMENT' | 'CERTIFICATE_EARNED';
+  title: string;
+  description: string;
+  timestamp: string;
+}
+
+export interface InstructorPrivateNote {
+  note_id: string;
+  learner_id: string | number;
+  instructor_id: string | number;
+  instructor_name: string;
+  course_id: number;
+  note_text: string;
+  created_at: string;
+}
+
+export interface LMSInstitutionStats {
+  totalLearners: number;
+  totalInstructors: number;
+  totalCourses: number;
+  totalEnrollments: number;
+  activeLearners: number;
+  inactiveLearners: number;
+  atRiskLearners: number;
+  completedEnrollments: number;
+  avgCompletionPct: number;
+  avgAssessmentScore: number;
+  pendingEvaluations: number;
+  certificatesIssued: number;
+}
+

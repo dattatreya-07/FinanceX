@@ -142,17 +142,30 @@ export const CourseCatalogView: React.FC<CourseCatalogViewProps> = ({
             </div>
 
             {/* Action Bar */}
-            <div className="p-6 pt-0 flex items-center justify-between">
-              <div className="text-xs font-mono text-emerald-700 dark:text-[#00E599] font-bold">
+            <div className="p-6 pt-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-800/80 pt-4">
+              <div className="text-[11px] font-mono text-emerald-700 dark:text-[#00E599] font-bold">
                 100% INCLUDED (ACADEMY SCHOLARSHIP)
               </div>
-              <button
-                onClick={() => onSelectCourse(course)}
-                className="px-4 py-2 rounded-xl bg-[#FF2E7E] hover:bg-[#E61E6D] text-white dark:bg-[#00E599] dark:hover:bg-[#00B377] dark:text-slate-950 font-bold text-xs transition flex items-center gap-1.5 shadow-sm dark:shadow-[0_0_15px_rgba(0,229,153,0.25)] cursor-pointer"
-              >
-                <span>Enter Course</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    onSelectCourse(course);
+                    onNavigate('syllabus');
+                  }}
+                  className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-400 text-slate-700 dark:text-slate-300 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"
+                  title="View NPTEL-style weekly curriculum syllabus and objectives"
+                >
+                  <BookOpen className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>Syllabus</span>
+                </button>
+                <button
+                  onClick={() => onSelectCourse(course)}
+                  className="px-4 py-2 rounded-xl bg-[#FF2E7E] hover:bg-[#E61E6D] text-white dark:bg-[#00E599] dark:hover:bg-[#00B377] dark:text-slate-950 font-bold text-xs transition flex items-center gap-1.5 shadow-sm dark:shadow-[0_0_15px_rgba(0,229,153,0.25)] cursor-pointer"
+                >
+                  <span>Enter Course</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         ))}

@@ -18,14 +18,20 @@ import {
   Search,
   ExternalLink,
   BarChart3,
-  Building2
+  Building2,
+  GraduationCap,
+  RotateCcw
 } from 'lucide-react';
 import { User, AppNavView } from '../../types/schema';
+import { lmsService } from '../../services/lmsService';
 
 export type AdminTab = 
   | 'dashboard'
   | 'enterprise-governance'
   | 'institutional-analytics'
+  | 'instructors'
+  | 'batches'
+  | 'lms-reports'
   | 'courses'
   | 'structure'
   | 'lessons'
@@ -53,8 +59,19 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   currentUser,
   children
 }) => {
+  const [resetConfirmOpen, setResetConfirmOpen] = React.useState(false);
+
+  const handleResetDemo = () => {
+    lmsService.resetDemoData();
+    setResetConfirmOpen(false);
+    alert('Demo state successfully reset to initial deterministic seeds.');
+  };
+
   const navItems = [
     { id: 'dashboard' as AdminTab, label: 'Dashboard & KPIs', icon: <LayoutDashboard className="w-4 h-4" /> },
+    { id: 'instructors' as AdminTab, label: 'Faculty & Instructors', icon: <GraduationCap className="w-4 h-4 text-cyan-500" /> },
+    { id: 'batches' as AdminTab, label: 'Cohorts & Batches', icon: <Layers className="w-4 h-4 text-emerald-500" /> },
+    { id: 'lms-reports' as AdminTab, label: 'Institution Reports & Export', icon: <FileText className="w-4 h-4 text-amber-500" /> },
     { id: 'enterprise-governance' as AdminTab, label: 'Enterprise & Compliance', icon: <Building2 className="w-4 h-4" /> },
     { id: 'institutional-analytics' as AdminTab, label: 'Institutional & Item Analytics', icon: <BarChart3 className="w-4 h-4" /> },
     { id: 'courses' as AdminTab, label: 'Course Catalog', icon: <BookOpen className="w-4 h-4" /> },
@@ -137,6 +154,15 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
 
         {/* Current Admin Identity Footer */}
         <div className="pt-4 mt-6 border-t border-slate-200 dark:border-slate-800/80 space-y-2">
+          {/* Reset Demo Data Button */}
+          <button
+            onClick={() => setResetConfirmOpen(true)}
+            className="w-full py-2 px-3 rounded-xl border border-amber-300 dark:border-amber-900/60 bg-amber-50/50 dark:bg-amber-950/20 hover:bg-amber-100 text-amber-800 dark:text-amber-300 font-mono text-[11px] font-bold transition flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Reset Demo Data</span>
+          </button>
+
           <div className="flex items-center gap-3 p-2 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
             <img
               src={currentUser.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
@@ -154,6 +180,35 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           </div>
         </div>
       </aside>
+
+      {/* Confirmation Dialog for Reset Demo State */}
+      {resetConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md rounded-3xl bg-white dark:bg-[#0B0F19] border border-amber-300 dark:border-amber-900/60 p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center gap-3 text-amber-600">
+              <RotateCcw className="w-6 h-6 flex-shrink-0" />
+              <h3 className="text-lg font-black text-slate-900 dark:text-white">Reset Demo Environment?</h3>
+            </div>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              This will restore all sample student enrollments, instructor profiles, course cohorts, assignments, and test submissions to their baseline state.
+            </p>
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                onClick={() => setResetConfirmOpen(false)}
+                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResetDemo}
+                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition cursor-pointer shadow-sm"
+              >
+                Yes, Reset Data
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Admin Content Viewport */}
       <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto max-w-7xl mx-auto w-full">

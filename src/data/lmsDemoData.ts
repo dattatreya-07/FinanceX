@@ -1,0 +1,655 @@
+/**
+ * DEMO MODE — SAMPLE LEARNER RECORDS AND PROGRESS
+ * Centralized, deterministic sample data for FinanceX LMS Multi-Role Platform.
+ * All records are sample data designed for institutional demonstration.
+ */
+
+import { 
+  InstructorProfile, 
+  CourseBatch, 
+  CourseEnrollmentRecord, 
+  LMSAssignment, 
+  LMSAssignmentSubmission, 
+  InstructorPrivateNote,
+  LearnerActivityEvent 
+} from '../types/schema';
+
+export const LMS_DEMO_BANNER = 'DEMO MODE — Sample learner records and progress';
+
+export const SEED_INSTRUCTORS: InstructorProfile[] = [
+  {
+    instructor_id: 'inst-001',
+    user_id: 'user-inst-001',
+    full_name: 'Dr. R. Subramanian',
+    email: 'r.subramanian@financex.edu',
+    title: 'Professor of Capital Markets & SEBI Research Lead',
+    organization: 'FinanceX Institutional Academy',
+    bio: 'Ex-SEBI Advisory Committee member with 18+ years of capital markets experience. Specializes in NISM Series XV and corporate governance.',
+    avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    assigned_course_ids: [1, 3],
+    active_cohorts_count: 2,
+    total_students_mentored: 840,
+    rating: 4.92,
+    status: 'ACTIVE'
+  },
+  {
+    instructor_id: 'inst-002',
+    user_id: 'user-inst-002',
+    full_name: 'CFA Vikram Mehta',
+    email: 'vikram.mehta@financex.edu',
+    title: 'Managing Director — Quantitative Derivatives & Hedging',
+    organization: 'FinanceX Capital Labs',
+    bio: 'Former Executive Director at Goldman Sachs Derivatives Desk. Pioneer in Black-Scholes volatility modeling and multi-leg delta hedging.',
+    avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+    assigned_course_ids: [1],
+    active_cohorts_count: 1,
+    total_students_mentored: 620,
+    rating: 4.95,
+    status: 'ACTIVE'
+  },
+  {
+    instructor_id: 'inst-003',
+    user_id: 'user-inst-003',
+    full_name: 'Prof. Ananya Roy',
+    email: 'ananya.roy@financex.edu',
+    title: 'Head of Wealth Management & Mutual Funds Faculty',
+    organization: 'National Institute of Securities Markets Guest Faculty',
+    bio: 'Author of "The Indian Mutual Fund Ecosystem" and registered investment advisor. Specialist in SEBI scheme categorization and portfolio attribution.',
+    avatar_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+    assigned_course_ids: [2],
+    active_cohorts_count: 1,
+    total_students_mentored: 1150,
+    rating: 4.88,
+    status: 'ACTIVE'
+  },
+  {
+    instructor_id: 'inst-004',
+    user_id: 'user-inst-004',
+    full_name: 'Rajeshwar Sen',
+    email: 'rajeshwar.sen@financex.edu',
+    title: 'Director — Quantitative Valuation & Fixed Income Research',
+    organization: 'FinanceX Financial Terminal',
+    bio: '20+ years leading fundamental equity valuation across BSE 500 stocks. Expert in DuPont 5-stage decomposition and DCF scenario modeling.',
+    avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
+    assigned_course_ids: [4],
+    active_cohorts_count: 1,
+    total_students_mentored: 490,
+    rating: 4.89,
+    status: 'ACTIVE'
+  }
+];
+
+export const SEED_BATCHES: CourseBatch[] = [
+  {
+    batch_id: 'batch-nism-2026-q1',
+    batch_name: 'NISM Series XV — Executive Cohort 2026-Q1',
+    course_id: 3,
+    course_title: 'NISM Series XV: Research Analyst Certification Examination',
+    instructor_id: 'inst-001',
+    instructor_name: 'Dr. R. Subramanian',
+    start_date: '2026-01-10',
+    end_date: '2026-04-30',
+    capacity: 60,
+    enrolled_count: 48,
+    status: 'ACTIVE'
+  },
+  {
+    batch_id: 'batch-deriv-2026-a',
+    batch_name: 'Equity Derivatives & Greeks — Spring Batch',
+    course_id: 1,
+    course_title: 'NISM Series VIII: Equity Derivatives Masterclass',
+    instructor_id: 'inst-002',
+    instructor_name: 'CFA Vikram Mehta',
+    start_date: '2026-02-01',
+    end_date: '2026-05-15',
+    capacity: 50,
+    enrolled_count: 36,
+    status: 'ACTIVE'
+  },
+  {
+    batch_id: 'batch-mf-2026-b',
+    batch_name: 'Mutual Fund Distribution — Accelerated',
+    course_id: 2,
+    course_title: 'NISM Series V-A: Mutual Fund Distributors Certification',
+    instructor_id: 'inst-003',
+    instructor_name: 'Prof. Ananya Roy',
+    start_date: '2026-01-20',
+    end_date: '2026-04-10',
+    capacity: 75,
+    enrolled_count: 62,
+    status: 'ACTIVE'
+  },
+  {
+    batch_id: 'batch-val-2026-w',
+    batch_name: 'Advanced Corporate DCF Modeling — Weekend',
+    course_id: 4,
+    course_title: 'Advanced Financial Statement Analysis & DCF Valuation',
+    instructor_id: 'inst-004',
+    instructor_name: 'Rajeshwar Sen',
+    start_date: '2026-02-15',
+    end_date: '2026-06-01',
+    capacity: 40,
+    enrolled_count: 28,
+    status: 'ACTIVE'
+  }
+];
+
+export const SEED_ENROLLMENTS: CourseEnrollmentRecord[] = [
+  {
+    enrollment_id: 'enr-alex-001',
+    learner_id: 'learner-001',
+    learner_name: 'Alex Rivera',
+    learner_email: 'learner@financex.com',
+    learner_avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
+    course_id: 3,
+    course_title: 'NISM Series XV: Research Analyst Certification Examination',
+    batch_id: 'batch-nism-2026-q1',
+    batch_name: 'NISM Series XV — Executive Cohort 2026-Q1',
+    enrolled_at: '2026-01-12T09:30:00Z',
+    status: 'ACTIVE',
+    progress_pct: 68,
+    lessons_completed: 10,
+    total_lessons: 15,
+    quizzes_taken: 6,
+    quiz_avg_score: 84.5,
+    assignments_submitted: 2,
+    total_assignments: 2,
+    assignment_avg_score: 92.0,
+    learning_hours: 38.5,
+    last_active_at: '2026-11-04T14:20:00Z',
+    attendance_pct: 95.0,
+    final_grade: 'A'
+  },
+  {
+    enrollment_id: 'enr-alex-002',
+    learner_id: 'learner-001',
+    learner_name: 'Alex Rivera',
+    learner_email: 'learner@financex.com',
+    learner_avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
+    course_id: 1,
+    course_title: 'NISM Series VIII: Equity Derivatives Masterclass',
+    batch_id: 'batch-deriv-2026-a',
+    batch_name: 'Equity Derivatives & Greeks — Spring Batch',
+    enrolled_at: '2026-02-05T11:00:00Z',
+    status: 'ACTIVE',
+    progress_pct: 55,
+    lessons_completed: 6,
+    total_lessons: 11,
+    quizzes_taken: 4,
+    quiz_avg_score: 79.0,
+    assignments_submitted: 1,
+    total_assignments: 2,
+    assignment_avg_score: 88.0,
+    learning_hours: 24.0,
+    last_active_at: '2026-11-03T18:45:00Z',
+    attendance_pct: 90.0
+  },
+  {
+    enrollment_id: 'enr-priya-001',
+    learner_id: 'learner-002',
+    learner_name: 'Priya Sharma',
+    learner_email: 'priya.sharma@sample.edu',
+    learner_avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100',
+    course_id: 3,
+    course_title: 'NISM Series XV: Research Analyst Certification Examination',
+    batch_id: 'batch-nism-2026-q1',
+    batch_name: 'NISM Series XV — Executive Cohort 2026-Q1',
+    enrolled_at: '2026-01-11T10:00:00Z',
+    status: 'ACTIVE',
+    progress_pct: 94,
+    lessons_completed: 14,
+    total_lessons: 15,
+    quizzes_taken: 8,
+    quiz_avg_score: 93.0,
+    assignments_submitted: 2,
+    total_assignments: 2,
+    assignment_avg_score: 97.0,
+    learning_hours: 52.0,
+    last_active_at: '2026-11-04T12:10:00Z',
+    attendance_pct: 98.0,
+    final_grade: 'A+'
+  },
+  {
+    enrollment_id: 'enr-rohan-001',
+    learner_id: 'learner-003',
+    learner_name: 'Rohan Kulkarni',
+    learner_email: 'rohan.kulkarni@sample.edu',
+    learner_avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100',
+    course_id: 3,
+    course_title: 'NISM Series XV: Research Analyst Certification Examination',
+    batch_id: 'batch-nism-2026-q1',
+    batch_name: 'NISM Series XV — Executive Cohort 2026-Q1',
+    enrolled_at: '2026-01-14T14:15:00Z',
+    status: 'AT_RISK',
+    progress_pct: 28,
+    lessons_completed: 4,
+    total_lessons: 15,
+    quizzes_taken: 3,
+    quiz_avg_score: 54.0,
+    assignments_submitted: 1,
+    total_assignments: 2,
+    assignment_avg_score: 58.0,
+    learning_hours: 14.5,
+    last_active_at: '2026-10-25T11:20:00Z',
+    attendance_pct: 62.0,
+    final_grade: 'C'
+  },
+  {
+    enrollment_id: 'enr-neha-001',
+    learner_id: 'learner-004',
+    learner_name: 'Neha Patel',
+    learner_email: 'neha.patel@sample.edu',
+    learner_avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100',
+    course_id: 1,
+    course_title: 'NISM Series VIII: Equity Derivatives Masterclass',
+    batch_id: 'batch-deriv-2026-a',
+    batch_name: 'Equity Derivatives & Greeks — Spring Batch',
+    enrolled_at: '2026-02-02T16:00:00Z',
+    status: 'ACTIVE',
+    progress_pct: 85,
+    lessons_completed: 9,
+    total_lessons: 11,
+    quizzes_taken: 5,
+    quiz_avg_score: 89.0,
+    assignments_submitted: 2,
+    total_assignments: 2,
+    assignment_avg_score: 94.0,
+    learning_hours: 36.0,
+    last_active_at: '2026-11-04T08:30:00Z',
+    attendance_pct: 94.0,
+    final_grade: 'A'
+  },
+  {
+    enrollment_id: 'enr-arjun-001',
+    learner_id: 'learner-005',
+    learner_name: 'Arjun Nair',
+    learner_email: 'arjun.nair@sample.edu',
+    learner_avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100',
+    course_id: 3,
+    course_title: 'NISM Series XV: Research Analyst Certification Examination',
+    batch_id: 'batch-nism-2026-q1',
+    batch_name: 'NISM Series XV — Executive Cohort 2026-Q1',
+    enrolled_at: '2026-01-18T12:00:00Z',
+    status: 'AT_RISK',
+    progress_pct: 42,
+    lessons_completed: 6,
+    total_lessons: 15,
+    quizzes_taken: 4,
+    quiz_avg_score: 61.0,
+    assignments_submitted: 1,
+    total_assignments: 2,
+    assignment_avg_score: 64.0,
+    learning_hours: 19.0,
+    last_active_at: '2026-10-28T09:15:00Z',
+    attendance_pct: 70.0,
+    final_grade: 'B-'
+  },
+  {
+    enrollment_id: 'enr-sneha-001',
+    learner_id: 'learner-006',
+    learner_name: 'Sneha Varma',
+    learner_email: 'sneha.varma@sample.edu',
+    learner_avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=100',
+    course_id: 2,
+    course_title: 'NISM Series V-A: Mutual Fund Distributors Certification',
+    batch_id: 'batch-mf-2026-b',
+    batch_name: 'Mutual Fund Distribution — Accelerated',
+    enrolled_at: '2026-01-22T08:00:00Z',
+    status: 'ACTIVE',
+    progress_pct: 78,
+    lessons_completed: 8,
+    total_lessons: 10,
+    quizzes_taken: 5,
+    quiz_avg_score: 86.0,
+    assignments_submitted: 1,
+    total_assignments: 1,
+    assignment_avg_score: 90.0,
+    learning_hours: 28.5,
+    last_active_at: '2026-11-03T15:10:00Z',
+    attendance_pct: 91.0,
+    final_grade: 'A-'
+  },
+  {
+    enrollment_id: 'enr-vikram-001',
+    learner_id: 'learner-007',
+    learner_name: 'Vikramaditya Bose',
+    learner_email: 'vikram.bose@sample.edu',
+    learner_avatar: 'https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?w=100',
+    course_id: 4,
+    course_title: 'Advanced Financial Statement Analysis & DCF Valuation',
+    batch_id: 'batch-val-2026-w',
+    batch_name: 'Advanced Corporate DCF Modeling — Weekend',
+    enrolled_at: '2026-02-18T10:00:00Z',
+    status: 'ACTIVE',
+    progress_pct: 91,
+    lessons_completed: 9,
+    total_lessons: 10,
+    quizzes_taken: 4,
+    quiz_avg_score: 95.0,
+    assignments_submitted: 1,
+    total_assignments: 1,
+    assignment_avg_score: 96.0,
+    learning_hours: 44.0,
+    last_active_at: '2026-11-04T16:30:00Z',
+    attendance_pct: 97.0,
+    final_grade: 'A+'
+  },
+  {
+    enrollment_id: 'enr-kavita-001',
+    learner_id: 'learner-008',
+    learner_name: 'Kavita Iyer',
+    learner_email: 'kavita.iyer@sample.edu',
+    learner_avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
+    course_id: 2,
+    course_title: 'NISM Series V-A: Mutual Fund Distributors Certification',
+    batch_id: 'batch-mf-2026-b',
+    batch_name: 'Mutual Fund Distribution — Accelerated',
+    enrolled_at: '2026-01-24T14:30:00Z',
+    status: 'ACTIVE',
+    progress_pct: 88,
+    lessons_completed: 9,
+    total_lessons: 10,
+    quizzes_taken: 6,
+    quiz_avg_score: 87.5,
+    assignments_submitted: 1,
+    total_assignments: 1,
+    assignment_avg_score: 89.0,
+    learning_hours: 31.0,
+    last_active_at: '2026-11-02T19:00:00Z',
+    attendance_pct: 92.0,
+    final_grade: 'A'
+  },
+  {
+    enrollment_id: 'enr-sameer-001',
+    learner_id: 'learner-011',
+    learner_name: 'Sameer Joshi',
+    learner_email: 'sameer.joshi@sample.edu',
+    learner_avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=100',
+    course_id: 2,
+    course_title: 'NISM Series V-A: Mutual Fund Distributors Certification',
+    batch_id: 'batch-mf-2026-b',
+    batch_name: 'Mutual Fund Distribution — Accelerated',
+    enrolled_at: '2026-01-20T11:00:00Z',
+    status: 'COMPLETED',
+    progress_pct: 100,
+    lessons_completed: 10,
+    total_lessons: 10,
+    quizzes_taken: 7,
+    quiz_avg_score: 96.0,
+    assignments_submitted: 1,
+    total_assignments: 1,
+    assignment_avg_score: 95.0,
+    learning_hours: 35.0,
+    last_active_at: '2026-10-30T17:00:00Z',
+    attendance_pct: 100.0,
+    final_grade: 'A+',
+    certificate_id: 'FX-CERT-2026-0814'
+  }
+];
+
+export const SEED_ASSIGNMENTS: LMSAssignment[] = [
+  {
+    assignment_id: 'asg-nism-01',
+    course_id: 3,
+    module_week: 2,
+    title: 'Chapter 3 Practical Drill: Clean vs Dirty Bond Pricing & Yield to Maturity Calculation',
+    description: 'Calculate clean vs dirty bond pricing for a 10-year Indian Government Security (G-Sec) coupon with semi-annual payouts. Determine theoretical yield to maturity (YTM) and explain accrued interest under 30/360 day-count conventions.',
+    rubric: [
+      { criterion: 'Accrued Interest Precision', max_points: 30, description: 'Accurate semi-annual coupon fraction calculation.' },
+      { criterion: 'Dirty Price Conversion', max_points: 40, description: 'Clean price + accrued interest formula verification.' },
+      { criterion: 'Regulatory Interpretation', max_points: 30, description: 'Explanation of RBI/SEBI settlement mechanics.' }
+    ],
+    max_score: 100,
+    due_date: '2026-11-15T23:59:59Z',
+    estimated_minutes: 60,
+    starter_financial_data: {
+      model_type: 'BOND_PRICING',
+      scenario: 'G-Sec 7.26% 2033 maturity, settlement date T+1',
+      provided_inputs: { face_value: 1000, coupon_rate_pct: 7.26, coupon_frequency: 2, last_coupon_days_ago: 74 }
+    },
+    status: 'PUBLISHED'
+  },
+  {
+    assignment_id: 'asg-nism-02',
+    course_id: 3,
+    module_week: 5,
+    title: 'NISM Series XV Comprehensive Equity Research Note — DuPont 5-Stage Breakdown',
+    description: 'Perform a comprehensive 5-stage DuPont decomposition on a BSE 500 manufacturing firm. Deconstruct Return on Equity (ROE) into Operating Margin, Asset Turnover, Financial Leverage, Tax Burden, and Interest Burden.',
+    rubric: [
+      { criterion: 'DuPont Mathematical Formulas', max_points: 40, description: 'Correct formula execution for each of the 5 stages.' },
+      { criterion: 'Earnings Quality Assessment', max_points: 35, description: 'Operating cash flow vs Net Profit divergence analysis.' },
+      { criterion: 'Investment Thesis & Recommendation', max_points: 25, description: 'Clear Buy/Hold/Sell rationale compliant with SEBI RA Regulations 2014.' }
+    ],
+    max_score: 100,
+    due_date: '2026-11-20T23:59:59Z',
+    estimated_minutes: 90,
+    starter_financial_data: {
+      model_type: 'DUPONT_5STAGE',
+      scenario: 'Tata Motors vs Mahindra & Mahindra Comparative Auto Industry Analysis'
+    },
+    status: 'PUBLISHED'
+  },
+  {
+    assignment_id: 'asg-deriv-01',
+    course_id: 1,
+    module_week: 3,
+    title: 'Constructing Delta-Neutral Straddle Hedge with Greeks Sensitivity Matrix',
+    description: 'Model a delta-neutral long straddle position for Nifty index options approaching weekly expiry. Calculate portfolio Gamma risk and quantify daily Theta decay bleed in INR terms.',
+    rubric: [
+      { criterion: 'Delta-Neutral Portfolio Weighting', max_points: 40, description: 'Accurate ratio of long call vs long put contracts.' },
+      { criterion: 'Greeks Sensitivity Quantification', max_points: 35, description: 'Accurate calculation of total Gamma and Theta decay.' },
+      { criterion: 'Risk Mitigation Strategy', max_points: 25, description: 'Threshold rules for gamma scalping adjustments.' }
+    ],
+    max_score: 100,
+    due_date: '2026-11-18T23:59:59Z',
+    estimated_minutes: 75,
+    starter_financial_data: {
+      model_type: 'OPTION_GREEKS_STRADDLE',
+      scenario: 'Nifty 24,000 Strike ATM Straddle, IV = 14.5%, Days to Expiry = 4'
+    },
+    status: 'PUBLISHED'
+  },
+  {
+    assignment_id: 'asg-val-01',
+    course_id: 4,
+    module_week: 4,
+    title: 'Unlevered Free Cash Flow (FCFF) Projection & Terminal Value Sensitivity',
+    description: 'Construct a 5-year discrete forecast of Unlevered Free Cash Flows (FCFF) and calculate Enterprise Value using both the Gordon Growth Model and EBITDA Exit Multiple method.',
+    rubric: [
+      { criterion: 'FCFF Derivation from EBIT', max_points: 35, description: 'EBIT*(1-t) + D&A - CapEx - Delta NWC.' },
+      { criterion: 'WACC Computation', max_points: 35, description: 'Cost of Equity via CAPM + After-Tax Cost of Debt.' },
+      { criterion: 'Sensitivity Table & Football Field', max_points: 30, description: 'Terminal Growth vs WACC two-way matrix.' }
+    ],
+    max_score: 100,
+    due_date: '2026-11-25T23:59:59Z',
+    estimated_minutes: 120,
+    status: 'PUBLISHED'
+  }
+];
+
+export const SEED_SUBMISSIONS: LMSAssignmentSubmission[] = [
+  {
+    submission_id: 'sub-alex-01',
+    assignment_id: 'asg-nism-01',
+    assignment_title: 'Chapter 3 Practical Drill: Clean vs Dirty Bond Pricing & Yield to Maturity Calculation',
+    course_id: 3,
+    course_title: 'NISM Series XV: Research Analyst Certification Examination',
+    learner_id: 'learner-001',
+    learner_name: 'Alex Rivera',
+    learner_email: 'learner@financex.com',
+    batch_id: 'batch-nism-2026-q1',
+    submitted_at: '2026-11-02T16:45:00Z',
+    status: 'GRADED',
+    content_text: 'Derived the dirty price of G-Sec 7.26% 2033 bond. Coupon payment occurs semi-annually with 74 elapsed days since the last coupon. Using 30/360 day-count convention, Accrued Interest = (74 / 180) * 36.30 = ₹14.92. Dirty Price = Clean Price (₹100.85) + Accrued Interest (₹1.492) = ₹102.342.',
+    quantitative_work: {
+      assumptions: { day_count: '30/360', face_value: 1000, coupon_semi: 36.30 },
+      calculated_metrics: { accrued_interest_inr: 14.92, dirty_price_inr: 102.34, ytm_pct: 7.18 },
+      financial_model_output: 'Verified via RBI NDS-OM T+1 standard pricing convention.'
+    },
+    score: 92,
+    max_score: 100,
+    evaluated_at: '2026-11-03T10:15:00Z',
+    evaluator_instructor_id: 'inst-001',
+    evaluator_name: 'Dr. R. Subramanian',
+    instructor_feedback: 'Excellent precision on the accrued interest calculation using semi-annual convention. The dirty price conversion was completely accurate. For your next research note, discuss how rate hikes affect the dirty price curve.',
+    rubric_scores: {
+      'Accrued Interest Precision': 28,
+      'Dirty Price Conversion': 38,
+      'Regulatory Interpretation': 26
+    }
+  },
+  {
+    submission_id: 'sub-alex-02',
+    assignment_id: 'asg-nism-02',
+    assignment_title: 'NISM Series XV Comprehensive Equity Research Note — DuPont 5-Stage Breakdown',
+    course_id: 3,
+    course_title: 'NISM Series XV: Research Analyst Certification Examination',
+    learner_id: 'learner-001',
+    learner_name: 'Alex Rivera',
+    learner_email: 'learner@financex.com',
+    batch_id: 'batch-nism-2026-q1',
+    submitted_at: '2026-11-04T11:20:00Z',
+    status: 'SUBMITTED',
+    content_text: 'Prepared full DuPont 5-Stage analysis for Tata Motors Passenger Vehicles business. Operating margin expanded from 6.2% to 9.4% driven by EV economies of scale. Tax burden remained stable at 0.74, while asset turnover improved to 1.15x. Recommendation: BUY with Target Price ₹1,120.',
+    quantitative_work: {
+      assumptions: { cost_of_capital: 11.2, tax_rate: 25.17 },
+      calculated_metrics: { roe_current: 18.6, tax_burden: 0.74, interest_burden: 0.88, ebit_margin: 9.4, asset_turnover: 1.15, leverage: 2.1 },
+      financial_model_output: 'Compliant with SEBI Research Analyst Regulations 2014 Code of Conduct.'
+    },
+    max_score: 100
+  },
+  {
+    submission_id: 'sub-priya-01',
+    assignment_id: 'asg-nism-01',
+    assignment_title: 'Chapter 3 Practical Drill: Clean vs Dirty Bond Pricing & Yield to Maturity Calculation',
+    course_id: 3,
+    course_title: 'NISM Series XV: Research Analyst Certification Examination',
+    learner_id: 'learner-002',
+    learner_name: 'Priya Sharma',
+    learner_email: 'priya.sharma@sample.edu',
+    batch_id: 'batch-nism-2026-q1',
+    submitted_at: '2026-11-01T14:30:00Z',
+    status: 'GRADED',
+    content_text: 'Full G-Sec pricing model submitted with cash flow discounting and modified duration calculation. Accrued interest is ₹14.92, Dirty price is ₹102.34.',
+    score: 98,
+    max_score: 100,
+    evaluated_at: '2026-11-02T09:00:00Z',
+    evaluator_instructor_id: 'inst-001',
+    evaluator_name: 'Dr. R. Subramanian',
+    instructor_feedback: 'Outstanding institutional-grade submission. Exemplary formatting and complete compliance rationale.',
+    rubric_scores: {
+      'Accrued Interest Precision': 30,
+      'Dirty Price Conversion': 40,
+      'Regulatory Interpretation': 28
+    }
+  },
+  {
+    submission_id: 'sub-rohan-01',
+    assignment_id: 'asg-nism-01',
+    assignment_title: 'Chapter 3 Practical Drill: Clean vs Dirty Bond Pricing & Yield to Maturity Calculation',
+    course_id: 3,
+    course_title: 'NISM Series XV: Research Analyst Certification Examination',
+    learner_id: 'learner-003',
+    learner_name: 'Rohan Kulkarni',
+    learner_email: 'rohan.kulkarni@sample.edu',
+    batch_id: 'batch-nism-2026-q1',
+    submitted_at: '2026-11-04T08:15:00Z',
+    status: 'SUBMITTED',
+    content_text: 'Draft bond calculation using annual instead of semi-annual coupon frequency. Dirty price estimated at ₹104.20.',
+    max_score: 100
+  },
+  {
+    submission_id: 'sub-neha-01',
+    assignment_id: 'asg-deriv-01',
+    assignment_title: 'Constructing Delta-Neutral Straddle Hedge with Greeks Sensitivity Matrix',
+    course_id: 1,
+    course_title: 'NISM Series VIII: Equity Derivatives Masterclass',
+    learner_id: 'learner-004',
+    learner_name: 'Neha Patel',
+    learner_email: 'neha.patel@sample.edu',
+    batch_id: 'batch-deriv-2026-a',
+    submitted_at: '2026-11-03T18:00:00Z',
+    status: 'GRADED',
+    content_text: 'Constructed long straddle with +10 lots 24,000 Call (Delta +0.51) and +10 lots 24,000 Put (Delta -0.49). Net delta +0.02. Delta neutral rebalance executed by shorting 1 lot mini futures.',
+    score: 95,
+    max_score: 100,
+    evaluated_at: '2026-11-04T10:00:00Z',
+    evaluator_instructor_id: 'inst-002',
+    evaluator_name: 'CFA Vikram Mehta',
+    instructor_feedback: 'Flawless execution of the delta neutral adjustment. Gamma scalping trigger levels were well formulated.',
+    rubric_scores: {
+      'Delta-Neutral Portfolio Weighting': 38,
+      'Greeks Sensitivity Quantification': 34,
+      'Risk Mitigation Strategy': 23
+    }
+  }
+];
+
+export const SEED_INSTRUCTOR_NOTES: InstructorPrivateNote[] = [
+  {
+    note_id: 'note-001',
+    learner_id: 'learner-003',
+    instructor_id: 'inst-001',
+    instructor_name: 'Dr. R. Subramanian',
+    course_id: 3,
+    note_text: 'Rohan struggled with Chapter 3 bond pricing day-count fractions. Recommend targeted remediation via AI Tutor on clean vs dirty price formula before mid-term exam.',
+    created_at: '2026-11-04T09:30:00Z'
+  },
+  {
+    note_id: 'note-002',
+    learner_id: 'learner-001',
+    instructor_id: 'inst-001',
+    instructor_name: 'Dr. R. Subramanian',
+    course_id: 3,
+    note_text: 'Alex shows high aptitude in DuPont decomposition and equity research. Potential candidate for advanced buy-side financial modeling seminar.',
+    created_at: '2026-11-03T11:00:00Z'
+  }
+];
+
+export const SEED_ACTIVITY_EVENTS: LearnerActivityEvent[] = [
+  {
+    event_id: 'evt-001',
+    learner_id: 'learner-001',
+    learner_name: 'Alex Rivera',
+    course_id: 3,
+    course_title: 'NISM Series XV: Research Analyst Certification Examination',
+    type: 'ASSIGNMENT_SUBMIT',
+    title: 'Submitted Equity Research Assignment',
+    description: 'Submitted DuPont 5-Stage research memo for Tata Motors PV.',
+    timestamp: '2026-11-04T11:20:00Z'
+  },
+  {
+    event_id: 'evt-002',
+    learner_id: 'learner-001',
+    learner_name: 'Alex Rivera',
+    course_id: 3,
+    course_title: 'NISM Series XV: Research Analyst Certification Examination',
+    type: 'ASSIGNMENT_GRADED',
+    title: 'Bond Pricing Drill Evaluated',
+    description: 'Awarded 92/100 by Dr. R. Subramanian.',
+    timestamp: '2026-11-03T10:15:00Z'
+  },
+  {
+    event_id: 'evt-003',
+    learner_id: 'learner-002',
+    learner_name: 'Priya Sharma',
+    course_id: 3,
+    course_title: 'NISM Series XV: Research Analyst Certification Examination',
+    type: 'QUIZ_ATTEMPT',
+    title: 'Completed Chapter 8 Quiz',
+    description: 'Scored 100% on Corporate Governance & Satyam Case Study.',
+    timestamp: '2026-11-04T12:05:00Z'
+  },
+  {
+    event_id: 'evt-004',
+    learner_id: 'learner-011',
+    learner_name: 'Sameer Joshi',
+    course_id: 2,
+    course_title: 'NISM Series V-A: Mutual Fund Distributors Certification',
+    type: 'CERTIFICATE_EARNED',
+    title: 'Course Completed & Certificate Issued',
+    description: 'Earned official Certificate FX-CERT-2026-0814 with Grade A+.',
+    timestamp: '2026-10-30T17:00:00Z'
+  }
+];
+

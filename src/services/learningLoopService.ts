@@ -60,7 +60,7 @@ export const learningLoopService = {
 
     return topics.map((topic) => {
       // 1. Lesson Exposure & Completion
-      const topicLessons = lessons.filter((l) => l.topic_id === topic.topic_id || (l as any).course_id === topic.topic_id);
+      const topicLessons = lessons.filter((l) => l.topic_id === topic.topic_id || (l.topic_id === undefined && (l as any).course_id === topic.topic_id));
       const totalLessons = topicLessons.length > 0 ? topicLessons.length : 1;
       const completedCount = topicLessons.filter((l) => {
         if (options?.completedLessonIds !== undefined) {

@@ -196,6 +196,15 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
               </button>
             )}
 
+            {onOpenSignIn && (
+              <button
+                onClick={onOpenSignIn}
+                className="px-4 py-2 rounded-full border border-slate-300 dark:border-slate-700 hover:border-[#FF2E7E] dark:hover:border-[#00E599] text-slate-700 dark:text-slate-200 font-bold text-xs transition cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/80"
+              >
+                Sign In
+              </button>
+            )}
+
             <button
               onClick={handleOpenApp}
               className="px-5 py-2.5 rounded-full bg-gradient-to-r from-[#FF2E7E] to-[#E61E6D] dark:from-[#00E599] dark:to-[#00B377] text-white dark:text-slate-950 font-bold text-xs hover:brightness-110 shadow-sm dark:shadow-[0_0_20px_rgba(0,229,153,0.35)] transition-all duration-200 flex items-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"

@@ -106,11 +106,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   };
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = async (forceDemo: boolean = false) => {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const { user, error, redirected } = await authService.signInWithGoogle();
+      const { user, error, redirected } = await authService.signInWithGoogle({ forceDemo });
       setIsLoading(false);
       if (redirected) return;
       if (error) {
@@ -122,7 +122,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           email: user.email,
           name: user.full_name,
           isNewUser: false,
-          isDemoUser: false,
+          isDemoUser: forceDemo,
           role: user.role
         });
       }
@@ -288,7 +288,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <>
                 <button
                   type="button"
-                  onClick={handleGoogleSignIn}
+                  onClick={() => handleGoogleSignIn(false)}
                   disabled={isLoading}
                   className="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/90 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold text-xs shadow-xs transition flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-50 hover:border-slate-300 dark:hover:border-slate-600"
                 >
@@ -312,6 +312,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </svg>
                   <span>{mode === 'register' ? 'Sign up with Google' : 'Sign in with Google'}</span>
                 </button>
+
+                <div className="flex items-center justify-between px-1 text-[11px] text-slate-500">
+                  <span className="text-slate-400">Offline or sandbox testing?</span>
+                  <button
+                    type="button"
+                    onClick={() => handleGoogleSignIn(true)}
+                    className="font-semibold text-pink-600 dark:text-[#00E599] hover:underline cursor-pointer"
+                  >
+                    Quick Demo Profile
+                  </button>
+                </div>
 
                 <div className="relative flex items-center justify-center my-2">
                   <div className="border-t border-slate-200 dark:border-slate-800 w-full" />

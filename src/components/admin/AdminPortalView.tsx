@@ -34,6 +34,9 @@ import { AnnouncementsManagerView } from './AnnouncementsManagerView';
 import { LearnerManagerView } from './LearnerManagerView';
 import { AuditLogsView } from './AuditLogsView';
 import { AdminPreviewModal } from './AdminPreviewModal';
+import { InstructorManagerView } from './InstructorManagerView';
+import { BatchManagerView } from './BatchManagerView';
+import { LMSReportsView } from './LMSReportsView';
 
 interface AdminPortalViewProps {
   currentUser: User;
@@ -377,6 +380,21 @@ export const AdminPortalView: React.FC<AdminPortalViewProps> = ({
           currentUser={currentUser}
           questions={questions}
         />
+      )}
+
+      {/* 1a-1. Faculty & Instructors Tab */}
+      {currentTab === 'instructors' && (
+        <InstructorManagerView courses={courses} />
+      )}
+
+      {/* 1a-2. Cohorts & Batches Tab */}
+      {currentTab === 'batches' && (
+        <BatchManagerView courses={courses} />
+      )}
+
+      {/* 1a-3. Institution Reports & Exports Tab */}
+      {currentTab === 'lms-reports' && (
+        <LMSReportsView />
       )}
 
       {/* 1b. Institutional Analytics Tab */}
