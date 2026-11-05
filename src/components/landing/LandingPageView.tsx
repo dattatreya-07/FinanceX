@@ -196,22 +196,50 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
               </button>
             )}
 
-            {onOpenSignIn && (
-              <button
-                onClick={onOpenSignIn}
-                className="px-4 py-2 rounded-full border border-slate-300 dark:border-slate-700 hover:border-[#FF2E7E] dark:hover:border-[#00E599] text-slate-700 dark:text-slate-200 font-bold text-xs transition cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/80"
-              >
-                Sign In
-              </button>
-            )}
+            {isAuthenticated && user && user.user_id !== 'guest' ? (
+              <div className="flex items-center gap-2.5">
+                <button
+                  onClick={handleOpenApp}
+                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/40 dark:bg-slate-800/80 border border-slate-300 dark:border-white/10 text-xs font-semibold hover:border-[#FF2E7E] dark:hover:border-[#00E599] transition cursor-pointer backdrop-blur-md"
+                  title={`Logged in as ${user.full_name}`}
+                >
+                  {user.avatar_url ? (
+                    <img src={user.avatar_url} alt={user.full_name} className="w-5 h-5 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-[#FF2E7E] to-[#00E599] flex items-center justify-center text-[10px] text-white font-bold">
+                      {user.full_name?.charAt(0) || 'U'}
+                    </div>
+                  )}
+                  <span className="max-w-[120px] truncate text-slate-800 dark:text-slate-200">{user.full_name}</span>
+                </button>
+                <button
+                  onClick={handleOpenApp}
+                  className="px-5 py-2.5 rounded-full bg-gradient-to-r from-[#FF2E7E] to-[#E61E6D] dark:from-[#00E599] dark:to-[#00B377] text-white dark:text-slate-950 font-bold text-xs hover:brightness-110 shadow-sm transition flex items-center gap-2 cursor-pointer"
+                >
+                  <span>Go to Dashboard</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <>
+                {onOpenSignIn && (
+                  <button
+                    onClick={onOpenSignIn}
+                    className="px-4 py-2 rounded-full border border-slate-300 dark:border-slate-700 hover:border-[#FF2E7E] dark:hover:border-[#00E599] text-slate-700 dark:text-slate-200 font-bold text-xs transition cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/80"
+                  >
+                    Sign In
+                  </button>
+                )}
 
-            <button
-              onClick={handleOpenApp}
-              className="px-5 py-2.5 rounded-full bg-gradient-to-r from-[#FF2E7E] to-[#E61E6D] dark:from-[#00E599] dark:to-[#00B377] text-white dark:text-slate-950 font-bold text-xs hover:brightness-110 shadow-sm dark:shadow-[0_0_20px_rgba(0,229,153,0.35)] transition-all duration-200 flex items-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <span>Open FinanceX</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+                <button
+                  onClick={handleOpenApp}
+                  className="px-5 py-2.5 rounded-full bg-gradient-to-r from-[#FF2E7E] to-[#E61E6D] dark:from-[#00E599] dark:to-[#00B377] text-white dark:text-slate-950 font-bold text-xs hover:brightness-110 shadow-sm dark:shadow-[0_0_20px_rgba(0,229,153,0.35)] transition-all duration-200 flex items-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <span>Open FinanceX</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </>
+            )}
           </div>
 
           {/* Mobile Hamburger Toggle & Theme Toggle */}

@@ -139,7 +139,19 @@ export default function App() {
   const [isInstallModalOpen, setIsInstallModalOpen] = useState<boolean>(false);
   const [threads, setThreads] = useState<DiscussionThread[]>(() => communityService.getInitialThreads());
 
-  const [currentView, setCurrentView] = useState<AppNavView>('landing');
+  const [currentView, setCurrentView] = useState<AppNavView>(() => {
+    if (typeof window !== 'undefined') {
+      const isFromOAuth = window.location.hash.includes('access_token') || 
+                          window.location.hash.includes('refresh_token') ||
+                          window.location.search.includes('code=');
+      if (isFromOAuth) return 'dashboard';
+      try {
+        const savedView = sessionStorage.getItem('financex_active_view') as AppNavView;
+        if (savedView && savedView !== 'landing') return savedView;
+      } catch {}
+    }
+    return 'landing';
+  });
   const [user, setUser] = useState<User>(INITIAL_FRESH_USER);
 
   // Curriculum State
@@ -288,6 +300,32 @@ export default function App() {
 
   // 2. Restore Supabase / Local Auth Session & Subscribe to Auth State Changes
   useEffect(() => {
+    let hasRoutedAuth = false;
+
+    const routeAuthenticatedUser = (u: User) => {
+      if (hasRoutedAuth) return;
+      hasRoutedAuth = true;
+
+      // Clean the OAuth hash if present (#access_token=... or dangling #)
+      if (typeof window !== 'undefined' && window.location.hash) {
+        try {
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        } catch {}
+      }
+
+      // Seamlessly transition authenticated users to their platform portal
+      setCurrentView((prev) => {
+        if (prev === 'landing') {
+          const target: AppNavView = u.role === 'ADMIN' ? 'admin' : u.role === 'INSTRUCTOR' ? 'instructor' : 'dashboard';
+          if (typeof window !== 'undefined') {
+            try { sessionStorage.setItem('financex_active_view', target); } catch {}
+          }
+          return target;
+        }
+        return prev;
+      });
+    };
+
     const initAuth = async () => {
       const session = await authService.getSession();
       if (session?.user) {
@@ -296,24 +334,7 @@ export default function App() {
         
         // Robust profile synthesis from OAuth / session metadata if database row is initializing
         if (!profile && session.user) {
-          profile = {
-            user_id: session.user.id,
-            email: session.user.email || '',
-            full_name: (session.user as any).user_metadata?.full_name || 
-                       (session.user as any).user_metadata?.name || 
-                       session.user.email?.split('@')[0] || 'Learner',
-            phone_number: (session.user as any).phone || '',
-            account_status: 'ACTIVE',
-            role: ((session.user as any).app_metadata?.role as any) || 'USER',
-            knowledge_level_id: 1,
-            current_streak: 0,
-            longest_streak: 0,
-            xp_points: 0,
-            isDemoUser: false,
-            avatar_url: (session.user as any).user_metadata?.avatar_url || (session.user as any).user_metadata?.picture,
-            social_links: []
-          };
-          authService.setLocalActiveSession(profile);
+          profile = await authService.syncOAuthProfile(session.user);
         }
 
         if (profile) {
@@ -327,37 +348,31 @@ export default function App() {
             if (saved.notifications) setNotifications(saved.notifications);
             if (saved.quizAttempts) setQuizAttempts(saved.quizAttempts);
             if (saved.mockExamAttempts) setMockExamAttempts(saved.mockExamAttempts);
+          }
+
+          // If arriving from OAuth callback or active session exists on startup, ensure routing
+          const isFromOAuth = typeof window !== 'undefined' && (
+            window.location.hash.includes('access_token') || 
+            window.location.hash.includes('refresh_token') ||
+            window.location.search.includes('code=') ||
+            window.location.hash === '#'
+          );
+          if (isFromOAuth) {
+            routeAuthenticatedUser(profile);
           }
         }
       }
     };
     initAuth();
 
-    const sub = authService.onAuthStateChange(async (_event, session) => {
+    const sub = authService.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         setIsAuthenticated(true);
         let profile = await authService.getProfile(session.user.id);
 
         // Robust profile synthesis upon OAuth redirect (e.g. Google OAuth callback)
         if (!profile && session.user) {
-          profile = {
-            user_id: session.user.id,
-            email: session.user.email || '',
-            full_name: (session.user as any).user_metadata?.full_name || 
-                       (session.user as any).user_metadata?.name || 
-                       session.user.email?.split('@')[0] || 'Learner',
-            phone_number: (session.user as any).phone || '',
-            account_status: 'ACTIVE',
-            role: ((session.user as any).app_metadata?.role as any) || 'USER',
-            knowledge_level_id: 1,
-            current_streak: 0,
-            longest_streak: 0,
-            xp_points: 0,
-            isDemoUser: false,
-            avatar_url: (session.user as any).user_metadata?.avatar_url || (session.user as any).user_metadata?.picture,
-            social_links: []
-          };
-          authService.setLocalActiveSession(profile);
+          profile = await authService.syncOAuthProfile(session.user);
         }
 
         if (profile) {
@@ -372,8 +387,12 @@ export default function App() {
             if (saved.quizAttempts) setQuizAttempts(saved.quizAttempts);
             if (saved.mockExamAttempts) setMockExamAttempts(saved.mockExamAttempts);
           }
+
+          if (event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'INITIAL_SESSION') {
+            routeAuthenticatedUser(profile);
+          }
         }
-      } else if (_event === 'SIGNED_OUT') {
+      } else if (event === 'SIGNED_OUT') {
         setIsAuthenticated(false);
         setUser(INITIAL_FRESH_USER);
         setDemoAccount(INITIAL_FRESH_DEMO_ACCOUNT);
@@ -384,6 +403,9 @@ export default function App() {
         setMockExamAttempts([]);
         setUserCertificates([]);
         setNotifications(INITIAL_FRESH_NOTIFICATIONS);
+        if (typeof window !== 'undefined') {
+          try { sessionStorage.removeItem('financex_active_view'); } catch {}
+        }
         setCurrentView('landing');
       }
     });
@@ -493,6 +515,16 @@ export default function App() {
       adminService.getLearners().then(list => {
         if (list && list.length > 0) setAdminLearners(list);
       });
+    }
+
+    if (typeof window !== 'undefined') {
+      try {
+        if (view === 'landing') {
+          sessionStorage.removeItem('financex_active_view');
+        } else {
+          sessionStorage.setItem('financex_active_view', view);
+        }
+      } catch {}
     }
 
     setCurrentView(view);
@@ -805,6 +837,9 @@ export default function App() {
   // Sign Out Handler (Clear session, reset user, return to landing)
   const handleSignOut = async () => {
     try {
+      if (typeof window !== 'undefined') {
+        try { sessionStorage.removeItem('financex_active_view'); } catch {}
+      }
       await authService.signOut();
     } catch (err) {
       console.warn('Sign out error:', err);

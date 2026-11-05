@@ -119,29 +119,31 @@ export const CinematicStoryStage: React.FC<CinematicStoryStageProps> = ({
     });
   }, []);
 
-  // Preload keyframes for all chapters
+  // Preload initial frames for the active chapter only, then lazily queue rest
   useEffect(() => {
-    CHAPTERS.forEach(ch => {
-      for (let f = 1; f <= Math.min(30, ch.totalFrames); f++) {
-        loadFrame(ch.id, f).catch(() => {});
-      }
-    });
+    // Only preload the initial frames of the first chapter (above the fold)
+    for (let f = 1; f <= 15; f++) {
+      loadFrame(1, f).catch(() => {});
+    }
 
-    const loadBackground = async () => {
-      for (const ch of CHAPTERS) {
-        for (let f = 1; f <= ch.totalFrames; f += 3) {
-          await loadFrame(ch.id, f).catch(() => {});
-        }
+    // Lazily preload remaining frames with pacing to avoid saturating network
+    let chIdx = 0;
+    let frameNum = 1;
+    const interval = setInterval(() => {
+      if (chIdx >= CHAPTERS.length) {
+        clearInterval(interval);
+        return;
       }
-      for (const ch of CHAPTERS) {
-        for (let f = 2; f <= ch.totalFrames; f += 3) {
-          await loadFrame(ch.id, f).catch(() => {});
-        }
+      const ch = CHAPTERS[chIdx];
+      loadFrame(ch.id, frameNum).catch(() => {});
+      frameNum += 4;
+      if (frameNum > ch.totalFrames) {
+        chIdx++;
+        frameNum = 1;
       }
-    };
+    }, 250);
 
-    const timer = setTimeout(loadBackground, 150);
-    return () => clearTimeout(timer);
+    return () => clearInterval(interval);
   }, [loadFrame]);
 
   // Master scroll listener

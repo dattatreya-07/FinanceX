@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { User, DemoAccount, DemoHolding, DemoTransaction, Goal, Notification, QuizAttempt, MockExamAttempt } from '../types/schema';
+import { User, UserRole, DemoAccount, DemoHolding, DemoTransaction, Goal, Notification, QuizAttempt, MockExamAttempt } from '../types/schema';
 import { MOCK_CURRENT_USER } from '../data/mockData';
 
 const LOCAL_USERS_KEY = 'financex_registered_users';
@@ -351,6 +351,54 @@ export const authService = {
       isFallbackActive: !isSupabaseConfigured,
       status: isSupabaseConfigured ? 'PRODUCTION_OAUTH' : 'LOCAL_DEMO_IDENTITY'
     };
+  },
+
+  /**
+   * Synchronize & persist an authenticated OAuth user session
+   */
+  async syncOAuthProfile(sessionUser: any): Promise<User> {
+    const userId = sessionUser.id;
+    const email = sessionUser.email || '';
+    const fullName = sessionUser.user_metadata?.full_name || 
+                     sessionUser.user_metadata?.name || 
+                     email.split('@')[0] || 'Learner';
+    const avatarUrl = sessionUser.user_metadata?.avatar_url || sessionUser.user_metadata?.picture;
+    const role = ((sessionUser.app_metadata?.role as any) || (email.toLowerCase().includes('admin') ? 'ADMIN' : 'USER')) as UserRole;
+
+    const profile: User = {
+      user_id: userId,
+      email,
+      full_name: fullName,
+      phone_number: sessionUser.phone || '',
+      account_status: 'ACTIVE',
+      role,
+      knowledge_level_id: 1,
+      current_streak: 0,
+      longest_streak: 0,
+      xp_points: 0,
+      isDemoUser: false,
+      avatar_url: avatarUrl,
+      social_links: []
+    };
+
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.from('profiles').upsert({
+          id: userId,
+          email,
+          full_name: fullName,
+          account_status: 'ACTIVE',
+          role,
+          avatar_url: avatarUrl,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'id' });
+      } catch (err) {
+        console.warn('Could not sync OAuth profile row to Supabase profiles table:', err);
+      }
+    }
+
+    this.setLocalActiveSession(profile);
+    return profile;
   },
 
   /**
