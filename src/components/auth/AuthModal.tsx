@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { X, Mail, Lock, User as UserIcon, Phone, ArrowRight, Loader2, ShieldCheck, CheckCircle2, RotateCcw, KeyRound } from 'lucide-react';
+import { X, Mail, Lock, User as UserIcon, Phone, ArrowRight, Loader2, ShieldCheck, CheckCircle2, RotateCcw, KeyRound, GraduationCap, Zap } from 'lucide-react';
 import { FinanceXLogo } from '../brand/FinanceXLogo';
-import { authService, DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD } from '../../services/authService';
+import { authService, DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD, DEFAULT_INSTRUCTOR_EMAIL, DEFAULT_INSTRUCTOR_PASSWORD } from '../../services/authService';
 import { adminService } from '../../services/adminService';
 import { UserRole } from '../../types/schema';
 
@@ -10,7 +10,7 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (userData: { email: string; name: string; isNewUser?: boolean; isDemoUser?: boolean; role?: UserRole }) => void;
-  initialMode?: 'login' | 'register' | 'admin';
+  initialMode?: 'login' | 'register' | 'admin' | 'instructor';
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -19,7 +19,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onSuccess,
   initialMode = 'login'
 }) => {
-  const [mode, setMode] = useState<'login' | 'register' | 'forgot' | 'verify' | 'admin'>(initialMode);
+  const [mode, setMode] = useState<'login' | 'register' | 'forgot' | 'verify' | 'admin' | 'instructor'>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -36,13 +36,42 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setErrorMessage(null);
   };
 
+  const handleFillInstructorDefaults = () => {
+    setEmail(DEFAULT_INSTRUCTOR_EMAIL);
+    setPassword(DEFAULT_INSTRUCTOR_PASSWORD);
+    setErrorMessage(null);
+  };
+
+  const handleQuickInstructorSignIn = async () => {
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      const { user, error } = await authService.signIn(DEFAULT_INSTRUCTOR_EMAIL, DEFAULT_INSTRUCTOR_PASSWORD);
+      setIsLoading(false);
+      if (error) {
+        setErrorMessage(error);
+        return;
+      }
+      onSuccess({
+        email: user?.email || DEFAULT_INSTRUCTOR_EMAIL,
+        name: user?.full_name || 'Dr. R. Subramanian',
+        isNewUser: false,
+        isDemoUser: true,
+        role: 'INSTRUCTOR'
+      });
+    } catch (err: any) {
+      setIsLoading(false);
+      setErrorMessage(err?.message || 'Failed to sign in as instructor.');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMessage(null);
     setResendStatus(null);
 
-    if (mode === 'login' || mode === 'admin') {
+    if (mode === 'login' || mode === 'admin' || mode === 'instructor') {
       const { user, error } = await authService.signIn(email, password);
       setIsLoading(false);
       
@@ -64,12 +93,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         }
       }
 
+      // Check Instructor privileges if in Instructor mode
+      if (mode === 'instructor') {
+        if (user?.role !== 'INSTRUCTOR' && user?.role !== 'ADMIN') {
+          setErrorMessage('Access Denied: This account lacks instructor credentials. Please sign in as a standard learner or use faculty credentials.');
+          return;
+        }
+      }
+
       onSuccess({
         email: user?.email || email,
         name: user?.full_name || email.split('@')[0],
         isNewUser: false,
-        isDemoUser: false,
-        role: user?.role
+        isDemoUser: user?.isDemoUser ?? (email.includes('admin') || email.includes('instructor')),
+        role: user?.role || (mode === 'instructor' ? 'INSTRUCTOR' : mode === 'admin' ? 'ADMIN' : 'USER')
       });
     } else if (mode === 'register') {
       const { user, error } = await authService.signUp(email, password, fullName, phoneNumber);
@@ -162,6 +199,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             {mode === 'register' && 'Create Your Account'}
             {mode === 'forgot' && 'Reset Security Credentials'}
             {mode === 'verify' && 'Verify Your Email Address'}
+            {mode === 'instructor' && (
+              <>
+                <GraduationCap className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <span>Instructor & Faculty Portal</span>
+              </>
+            )}
             {mode === 'admin' && (
               <>
                 <ShieldCheck className="w-5 h-5 text-purple-600 dark:text-purple-400" />
@@ -174,6 +217,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             {mode === 'register' && 'Join FinanceX to access market simulators, TradingView charts & masterclasses.'}
             {mode === 'forgot' && 'Enter your registered email to receive account recovery instructions.'}
             {mode === 'verify' && 'Please confirm your email address to unlock private workspace access.'}
+            {mode === 'instructor' && 'Accredited faculty terminal for course management, batch cohorts, and student assignment evaluation.'}
             {mode === 'admin' && 'Restricted portal for LMS managers, curriculum faculty, and super administrators.'}
           </p>
 
@@ -211,10 +255,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <button
                 type="button"
                 onClick={() => {
+                  setMode('instructor');
+                  setErrorMessage(null);
+                }}
+                className={`flex-1 py-2 rounded-lg transition cursor-pointer flex items-center justify-center gap-1 ${
+                  mode === 'instructor'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300'
+                }`}
+              >
+                <GraduationCap className="w-3.5 h-3.5" />
+                <span>Instructor</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
                   setMode('admin');
                   setErrorMessage(null);
                 }}
-                className={`flex-1 py-2 rounded-lg transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                className={`flex-1 py-2 rounded-lg transition cursor-pointer flex items-center justify-center gap-1 ${
                   mode === 'admin'
                     ? 'bg-purple-600 text-white shadow-xs'
                     : 'text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300'
@@ -313,15 +372,40 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <span>{mode === 'register' ? 'Sign up with Google' : 'Sign in with Google'}</span>
                 </button>
 
-                <div className="flex items-center justify-between px-1 text-[11px] text-slate-500">
-                  <span className="text-slate-400">Offline or sandbox testing?</span>
-                  <button
-                    type="button"
-                    onClick={() => handleGoogleSignIn(true)}
-                    className="font-semibold text-pink-600 dark:text-[#00E599] hover:underline cursor-pointer"
-                  >
-                    Quick Demo Profile
-                  </button>
+                <div className="flex flex-wrap items-center justify-between gap-1.5 px-1 text-[11px] text-slate-500">
+                  <span className="text-slate-400">Quick Demo Logins:</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleGoogleSignIn(true)}
+                      className="font-semibold text-pink-600 dark:text-[#FF2E7E] hover:underline cursor-pointer"
+                      title="Demo Learner Profile"
+                    >
+                      Learner
+                    </button>
+                    <span className="text-slate-300 dark:text-slate-700">•</span>
+                    <button
+                      type="button"
+                      onClick={handleQuickInstructorSignIn}
+                      className="font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer flex items-center gap-1"
+                      title="Quick Login as Dr. R. Subramanian (Faculty Demo)"
+                    >
+                      <GraduationCap className="w-3 h-3" />
+                      <span>Instructor</span>
+                    </button>
+                    <span className="text-slate-300 dark:text-slate-700">•</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode('admin');
+                        handleFillAdminDefaults();
+                      }}
+                      className="font-semibold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer"
+                      title="Quick Fill Admin Credentials"
+                    >
+                      Admin
+                    </button>
+                  </div>
                 </div>
 
                 <div className="relative flex items-center justify-center my-2">
@@ -372,7 +456,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
             <div>
               <label className="block text-xs font-mono font-bold text-slate-700 dark:text-slate-300 mb-1">
-                {mode === 'admin' ? 'ADMINISTRATOR EMAIL' : 'EMAIL OR USERNAME'}
+                {mode === 'admin' ? 'ADMINISTRATOR EMAIL' : mode === 'instructor' ? 'FACULTY EMAIL' : 'EMAIL OR USERNAME'}
               </label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
@@ -384,7 +468,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     setEmail(e.target.value);
                     setErrorMessage(null);
                   }}
-                  placeholder={mode === 'admin' ? 'admin@financex.com' : 'user@example.com or username'}
+                  placeholder={mode === 'admin' ? 'admin@financex.com' : mode === 'instructor' ? 'instructor@financex.com' : 'user@example.com or username'}
                   className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 pl-10 pr-3.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-[#FF2E7E] dark:focus:border-[#00E599] transition"
                 />
               </div>
@@ -424,6 +508,42 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
             )}
 
+            {/* Instructor Quick Fill & 1-Click Login Card */}
+            {mode === 'instructor' && (
+              <div className="p-3.5 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/80 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/60 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                      <GraduationCap className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-slate-900 dark:text-white">Dr. R. Subramanian</div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">instructor@financex.com</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleQuickInstructorSignIn}
+                    disabled={isLoading}
+                    className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <Zap className="w-3.5 h-3.5" />
+                    <span>Quick Login</span>
+                  </button>
+                </div>
+                <div className="pt-1.5 flex items-center justify-between text-[11px] border-t border-blue-200/60 dark:border-blue-800/50">
+                  <span className="text-blue-950 dark:text-blue-300 font-mono text-[10px]">Default Password: instructor123</span>
+                  <button
+                    type="button"
+                    onClick={handleFillInstructorDefaults}
+                    className="font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                  >
+                    Auto-Fill Form
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Admin Auto-Fill Helper */}
             {mode === 'admin' && (
               <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/80 flex items-center justify-between text-xs">
@@ -453,6 +573,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               className={`w-full mt-2 py-3.5 rounded-xl text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 ${
                 mode === 'admin'
                   ? 'bg-purple-600 hover:bg-purple-700'
+                  : mode === 'instructor'
+                  ? 'bg-blue-600 hover:bg-blue-700'
                   : 'bg-[#FF2E7E] hover:bg-[#E61E6D] dark:bg-gradient-to-r dark:from-[#00E599] dark:to-[#00B377] dark:text-slate-950'
               }`}
             >
@@ -464,6 +586,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     {mode === 'login' && 'Sign In to Terminal'}
                     {mode === 'register' && 'Create Account & Begin'}
                     {mode === 'forgot' && 'Send Reset Link'}
+                    {mode === 'instructor' && 'Authenticate as Instructor'}
                     {mode === 'admin' && 'Authenticate as Administrator'}
                   </span>
                   <ArrowRight className="w-4 h-4" />

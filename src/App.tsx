@@ -130,7 +130,7 @@ export default function App() {
     return true;
   });
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [authModalMode, setAuthModalMode] = useState<'login' | 'register' | 'admin'>('login');
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register' | 'admin' | 'instructor'>('login');
   const [isOnboarding, setIsOnboarding] = useState<boolean>(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
 
@@ -559,6 +559,11 @@ export default function App() {
     setIsAuthModalOpen(true);
   };
 
+  const handleOpenInstructorSignIn = () => {
+    setAuthModalMode('instructor');
+    setIsAuthModalOpen(true);
+  };
+
   // Authoritative Paper Trade Execution (Server/Database validated)
   const handleExecuteTrade = async (trade: {
     instrumentId: number;
@@ -746,7 +751,7 @@ export default function App() {
     setIsAuthModalOpen(false);
 
     if (userData.isDemoUser) {
-      const demoRole = userData.role || (userData.email.includes('admin') ? 'ADMIN' : 'USER');
+      const demoRole = userData.role || (userData.email.includes('admin') ? 'ADMIN' : userData.email.includes('instructor') ? 'INSTRUCTOR' : 'USER');
       setUser({ ...MOCK_CURRENT_USER, role: demoRole, isDemoUser: true });
       setDemoAccount(MOCK_DEMO_ACCOUNT);
       setHoldings(MOCK_DEMO_HOLDINGS);
@@ -757,6 +762,8 @@ export default function App() {
       setNotifications(MOCK_NOTIFICATIONS);
       if (demoRole === 'ADMIN') {
         handleNavigate('admin');
+      } else if (demoRole === 'INSTRUCTOR') {
+        handleNavigate('instructor');
       } else {
         handleNavigate('dashboard');
       }
@@ -765,7 +772,7 @@ export default function App() {
 
     const saved = authService.loadUserData(userData.email);
     if (saved && !userData.isNewUser) {
-      const userWithRole = { ...saved.user, role: saved.user.role || (userData.email.includes('admin') ? 'ADMIN' : 'USER'), isDemoUser: false };
+      const userWithRole = { ...saved.user, role: saved.user.role || (userData.email.includes('admin') ? 'ADMIN' : userData.email.includes('instructor') ? 'INSTRUCTOR' : 'USER'), isDemoUser: false };
       setUser(userWithRole);
       setDemoAccount(saved.demoAccount || INITIAL_FRESH_DEMO_ACCOUNT);
       setHoldings(saved.holdings || []);
@@ -776,11 +783,13 @@ export default function App() {
       setMockExamAttempts(saved.mockExamAttempts || []);
       if (userWithRole.role === 'ADMIN') {
         handleNavigate('admin');
+      } else if (userWithRole.role === 'INSTRUCTOR') {
+        handleNavigate('instructor');
       } else {
         handleNavigate('dashboard');
       }
     } else {
-      const assignedRole = userData.role || (userData.email.includes('admin') ? 'ADMIN' : 'USER');
+      const assignedRole = userData.role || (userData.email.includes('admin') ? 'ADMIN' : userData.email.includes('instructor') ? 'INSTRUCTOR' : 'USER');
       const freshUser: User = {
         user_id: Date.now(),
         email: userData.email,
@@ -828,6 +837,8 @@ export default function App() {
         setIsOnboarding(true);
       } else if (assignedRole === 'ADMIN') {
         handleNavigate('admin');
+      } else if (assignedRole === 'INSTRUCTOR') {
+        handleNavigate('instructor');
       } else {
         handleNavigate('dashboard');
       }
@@ -1519,6 +1530,7 @@ export default function App() {
           onOpenSignIn={handleOpenSignIn}
           onOpenSignUp={handleOpenSignUp}
           onOpenAdminSignIn={handleOpenAdminSignIn}
+          onOpenInstructorSignIn={handleOpenInstructorSignIn}
           onEnterApp={() => handleNavigate('dashboard')}
           onNavigateCourse={(courseId) => {
             const found = courses.find((c) => c.course_id === courseId);

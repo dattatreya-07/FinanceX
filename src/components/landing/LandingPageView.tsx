@@ -19,7 +19,8 @@ import {
   Zap, 
   Heart, 
   ChevronRight, 
-  BarChart3
+  BarChart3,
+  GraduationCap
 } from 'lucide-react';
 import { FinanceXLogo } from '../brand/FinanceXLogo';
 import { ThemeToggle } from '../layout/ThemeToggle';
@@ -32,6 +33,7 @@ interface LandingPageViewProps {
   onOpenSignIn: () => void;
   onOpenSignUp: () => void;
   onOpenAdminSignIn?: () => void;
+  onOpenInstructorSignIn?: () => void;
   onEnterApp: () => void;
   onNavigateCourse?: (courseId: number) => void;
 }
@@ -52,6 +54,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
   onOpenSignIn,
   onOpenSignUp,
   onOpenAdminSignIn,
+  onOpenInstructorSignIn,
   onEnterApp,
   onNavigateCourse
 }) => {
@@ -184,6 +187,17 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
           {/* Right Action Buttons */}
           <div className="hidden md:flex items-center gap-3 pointer-events-auto">
             <ThemeToggle variant="compact" />
+
+            {onOpenInstructorSignIn && (
+              <button
+                onClick={onOpenInstructorSignIn}
+                className="px-3.5 py-2 rounded-full bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-300/40 dark:border-blue-500/30 font-bold text-xs transition cursor-pointer flex items-center gap-1.5"
+                title="Institutional Faculty & Instructor Access"
+              >
+                <GraduationCap className="w-3.5 h-3.5" />
+                <span>Faculty</span>
+              </button>
+            )}
 
             {onOpenAdminSignIn && (
               <button

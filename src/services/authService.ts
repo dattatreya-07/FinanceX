@@ -19,6 +19,8 @@ export interface StoredUserData {
 
 export const DEFAULT_ADMIN_EMAIL = 'admin@financex.com';
 export const DEFAULT_ADMIN_PASSWORD = 'admin';
+export const DEFAULT_INSTRUCTOR_EMAIL = 'instructor@financex.com';
+export const DEFAULT_INSTRUCTOR_PASSWORD = 'instructor123';
 
 const SEED_DEFAULT_USERS: Record<string, { passwordHash: string; profile: User }> = {
   'admin@financex.com': {
@@ -267,6 +269,15 @@ export const authService = {
 
     this.setLocalActiveSession(profile);
     return { user: profile, error: null, isDemoFallback: true };
+  },
+
+  /**
+   * Helper to instantly sign in with Faculty/Instructor Demo Profile
+   */
+  signInWithInstructorDemoProfile(): { user: User; error: null; isDemoFallback: true } {
+    const instructorUser = SEED_DEFAULT_USERS[DEFAULT_INSTRUCTOR_EMAIL].profile;
+    this.setLocalActiveSession(instructorUser);
+    return { user: instructorUser, error: null, isDemoFallback: true };
   },
 
   /**
